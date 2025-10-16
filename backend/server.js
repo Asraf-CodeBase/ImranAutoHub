@@ -44,7 +44,7 @@ console.log('🖼️  Uploads directory:', uploadsDir);
 // MongoDB Connection
 const MONGODB_URL = process.env.MONGODB_URI;
 
-mongoose.connect('mongodb://localhost:27017/vehicleMarketplace', {
+mongoose.connect('mongodb+srv://autoHub_DB:JipGGsejA5LgVhKI@autohubcluster.h1cwt4d.mongodb.net/?retryWrites=true&w=majority&appName=AutoHubCluster', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('✅ MongoDB Connected'))
