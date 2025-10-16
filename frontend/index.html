@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImranAutoHub - Buy & Sell Vehicles</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo" onclick="showHome()">
+                <i class="fas fa-car"></i>
+                ImranAutoHub
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#" onclick="showHome()">Home</a></li>
+                <li><a href="#" onclick="showSellVehicle()">Sell Vehicle</a></li>
+                <li><a href="#" onclick="showDashboard()">Dashboard</a></li>
+                <li><a href="#" onclick="showAbout()">About</a></li>
+                <li><a href="#" onclick="showContact()">Contact</a></li>
+                <li id="authButtons">
+                    <a href="#" class="btn btn-secondary" onclick="showLogin()">Login</a>
+                    <a href="#" class="btn btn-primary" onclick="showRegister()">Register</a>
+                </li>
+                <li id="userMenu" class="hidden">
+                    <a href="#" onclick="logout()" class="btn btn-danger">Logout</a>
+                </li>
+            </ul>
+            <div class="mobile-menu" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+        <!-- Home Page -->
+        <div id="homePage">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1>Buy & Sell Vehicles with Confidence</h1>
+                    <p>Find your dream vehicle or sell yours at the best price. Join thousands of satisfied customers.</p>
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary" onclick="scrollToVehicles()">Browse Vehicles</button>
+                        <button class="btn btn-secondary" onclick="showSellVehicle()">Sell Your Vehicle</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search Section -->
+            <div class="container">
+                <div class="search-section">
+                    <form class="search-form" id="searchForm">
+                        <div class="form-group">
+                            <label>Brand</label>
+                            <input type="text" id="searchBrand" placeholder="e.g., Toyota">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="searchType">
+                                <option value="">All Types</option>
+                                <option value="Sedan">Sedan</option>
+                                <option value="SUV">SUV</option>
+                                <option value="Truck">Truck</option>
+                                <option value="Coupe">Coupe</option>
+                                <option value="Hatchback">Hatchback</option>
+                                <option value="Convertible">Convertible</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Min Price ($)</label>
+                            <input type="number" id="searchMinPrice" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Price ($)</label>
+                            <input type="number" id="searchMaxPrice" placeholder="100000">
+                        </div>
+                        <div class="form-group">
+                            <label>Min Year</label>
+                            <input type="number" id="searchMinYear" placeholder="2000">
+                        </div>
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Vehicle Listings -->
+                <section id="vehiclesSection">
+                    <h2 class="section-title">Available Vehicles</h2>
+                    <div class="vehicle-grid" id="vehicleGrid">
+                        <div class="spinner"></div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Registration Page -->
+        <div id="registerPage" class="hidden">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <h2>Create Account</h2>
+                    <p>Join AutoHub and start buying or selling vehicles today</p>
+                    <div class="error-message" id="registerError"></div>
+                    <div class="success-message" id="registerSuccess"></div>
+                    <form id="registerForm" class="auth-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="regName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="regEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="regPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="regPassword" required>
+                            <div class="password-strength">
+                                <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            <input type="password" id="regConfirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+                    </form>
+                    <div class="auth-link">
+                        Already have an account? <a href="#" onclick="showLogin()">Login here</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Page -->
+        <div id="loginPage" class="hidden">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <h2>Welcome Back</h2>
+                    <p>Login to access your account</p>
+                    <div class="error-message" id="loginError"></div>
+                    <form id="loginForm" class="auth-form">
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="loginEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="loginPassword" required>
+                            <div style="text-align: right; margin-top: 0.5rem;">
+                                <a href="pages/forgot-password.html" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+                                    Forgot Password?
+                                </a>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                    </form>
+                    <div class="auth-link">
+                        Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sell Vehicle Page -->
+
+        <div id="sellVehiclePage" class="hidden">
+            <div class="container">
+                <h2 class="section-title">Sell Your Vehicle</h2>
+                <div class="auth-card" style="max-width: 900px; margin: 0 auto;">
+                    <div class="error-message" id="sellError"></div>
+                    <div class="success-message" id="sellSuccess"></div>
+                    <form id="sellVehicleForm" class="auth-form">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                            <div class="form-group">
+                                <label>Brand</label>
+                                <input type="text" id="sellBrand" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Model</label>
+                                <input type="text" id="sellModel" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Year</label>
+                                <input type="number" id="sellYear" required min="1900" max="2025">
+                            </div>
+                            <div class="form-group">
+                                <label>Price ($)</label>
+                                <input type="number" id="sellPrice" required min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Type</label>
+                                <select id="sellType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Truck">Truck</option>
+                                    <option value="Coupe">Coupe</option>
+                                    <option value="Hatchback">Hatchback</option>
+                                    <option value="Convertible">Convertible</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Condition</label>
+                                <select id="sellCondition" required>
+                                    <option value="">Select Condition</option>
+                                    <option value="New">New</option>
+                                    <option value="Excellent">Excellent</option>
+                                    <option value="Good">Good</option>
+                                    <option value="Fair">Fair</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Mileage (miles)</label>
+                                <input type="number" id="sellMileage" required min="0">
+                            </div>
+
+                            <!-- UPDATED: Multiple Image Upload Section -->
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label>Vehicle Images (Upload 1-10 photos) *</label>
+                                <div style="background: #f0f9ff; padding: 1.5rem; border-radius: 8px; border: 2px dashed var(--primary);">
+                                    <input type="file" id="sellImages" accept="image/*" multiple required style="display: none;">
+                                    <button type="button" onclick="document.getElementById('sellImages').click()" 
+                                            style="width: 100%; padding: 1rem; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                                        <i class="fas fa-cloud-upload-alt"></i> Choose Images (Max 10)
+                                    </button>
+                                    <p style="text-align: center; margin-top: 0.5rem; color: var(--text-light); font-size: 0.9rem;">
+                                        JPG, PNG, GIF - Max 5MB per image
+                                    </p>
+
+                                    <!-- Image Preview Container -->
+                                    <div id="imagePreviewContainer" style="display: none; margin-top: 1rem;">
+                                        <h4 style="margin-bottom: 0.5rem; color: var(--dark);">Selected Images:</h4>
+                                        <div id="imagePreviews" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                                            <!-- Image previews will be inserted here -->
+                                        </div>
+                                        <div id="imageCount" style="text-align: center; margin-top: 1rem; font-weight: 600; color: var(--primary);">
+                                            <!-- Image count will be shown here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label>Description</label>
+                                <textarea id="sellDescription" rows="4" style="padding: 0.8rem; border: 2px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Contact Name</label>
+                                <input type="text" id="sellContactName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Contact Phone</label>
+                                <input type="tel" id="sellContactPhone" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                            <i class="fas fa-upload"></i> List Vehicle
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        /* Image Preview Styles */
+        .image-preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: #f0f0f0;
+        }
+
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+
+        .image-preview-remove:hover {
+            transform: scale(1.1);
+            background: #dc2626;
+        }
+
+        .image-preview-primary {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: var(--secondary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        </style>
+
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="hidden">
+            <div class="container">
+                <h2 class="section-title">My Dashboard</h2>
+                
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="statVehicles">0</h3>
+                            <p>My Vehicles</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="statBids">0</h3>
+                            <p>My Bids</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="statBookings">0</h3>
+                            <p>Bookings</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" onclick="switchTab('vehicles')">My Vehicles</button>
+                    <button class="tab-btn" onclick="switchTab('bids')">My Bids</button>
+                    <button class="tab-btn" onclick="switchTab('bookings')">Bookings</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="vehiclesTab" class="tab-content active">
+                    <div class="vehicle-grid" id="dashVehicleGrid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+
+                <div id="bidsTab" class="tab-content">
+                    <div class="vehicle-grid" id="dashBidsGrid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+
+                <div id="bookingsTab" class="tab-content">
+                    <div class="vehicle-grid" id="dashBookingsGrid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Page -->
+        <div id="aboutPage" class="hidden">
+            <div class="container">
+                <h2 class="section-title">About AutoHub</h2>
+                <div class="auth-card" style="max-width: 900px; margin: 0 auto;">
+                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Our Mission</h3>
+                    <p style="margin-bottom: 1.5rem;">AutoHub is dedicated to revolutionizing the vehicle buying and selling experience. We provide a secure, transparent, and efficient platform that connects buyers and sellers seamlessly.</p>
+                    
+                    <h3 style="color: var(--primary); margin-bottom: 1rem;">Why Choose Us?</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 0.8rem 0; border-bottom: 1px solid var(--border);"><i class="fas fa-check-circle" style="color: var(--secondary); margin-right: 0.5rem;"></i> Secure bidding system</li>
+                        <li style="padding: 0.8rem 0; border-bottom: 1px solid var(--border);"><i class="fas fa-check-circle" style="color: var(--secondary); margin-right: 0.5rem;"></i> Real-time notifications</li>
+                        <li style="padding: 0.8rem 0; border-bottom: 1px solid var(--border);"><i class="fas fa-check-circle" style="color: var(--secondary); margin-right: 0.5rem;"></i> Verified listings</li>
+                        <li style="padding: 0.8rem 0; border-bottom: 1px solid var(--border);"><i class="fas fa-check-circle" style="color: var(--secondary); margin-right: 0.5rem;"></i> Best price guarantee</li>
+                        <li style="padding: 0.8rem 0;"><i class="fas fa-check-circle" style="color: var(--secondary); margin-right: 0.5rem;"></i> 24/7 customer support</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Page -->
+        <div id="contactPage" class="hidden">
+            <div class="container">
+                <h2 class="section-title">Contact Us</h2>
+                <div class="auth-card" style="max-width: 600px; margin: 0 auto;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <div style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h3>Get In Touch</h3>
+                        <p style="color: var(--text-light);">We'd love to hear from you</p>
+                    </div>
+                    <div style="display: grid; gap: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 50px; height: 50px; background: rgba(37,99,235,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <p style="font-weight: 600;">Phone</p>
+                                <p style="color: var(--text-light);">+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 50px; height: 50px; background: rgba(37,99,235,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <p style="font-weight: 600;">Email</p>
+                                <p style="color: var(--text-light);">support@autohub.com</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 50px; height: 50px; background: rgba(37,99,235,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <p style="font-weight: 600;">Address</p>
+                                <p style="color: var(--text-light);">123 Auto Street, Car City, CC 12345</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Vehicle Detail Modal -->
+    <div id="vehicleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Vehicle Details</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-car"></i> AutoHub</h3>
+                <p>Your trusted platform for buying and selling vehicles with confidence and ease.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="#" onclick="showHome()">Home</a></li>
+                    <li><a href="#" onclick="showSellVehicle()">Sell Vehicle</a></li>
+                    <li><a href="#" onclick="showAbout()">About Us</a></li>
+                    <li><a href="#" onclick="showContact()">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Info</h3>
+                <ul class="footer-links">
+                    <li><i class="fas fa-phone"></i> +91 70087 03206</li>
+                    <li><i class="fas fa-envelope"></i> support@autohub.com</li>
+                    <li><i class="fas fa-map-marker-alt"></i> Upper Basti Milatnagar, Barbil</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Follow Us</h3>
+                <div style="display: flex; gap: 1rem; font-size: 1.5rem;">
+                    <a href="#" style="color: rgba(255,255,255,0.7);"><i class="fab fa-facebook"></i></a>
+                    <a href="#" style="color: rgba(255,255,255,0.7);"><i class="fab fa-twitter"></i></a>
+                    <a href="#" style="color: rgba(255,255,255,0.7);"><i class="fab fa-instagram"></i></a>
+                    <a href="#" style="color: rgba(255,255,255,0.7);"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 AutoHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="index.js" ></script>
+</body>
+</html>

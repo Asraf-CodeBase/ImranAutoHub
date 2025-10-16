@@ -1,0 +1,784 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const cors = require('cors');
+const socketIO = require('socket.io');
+const http = require('http');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
+
+// MongoDB Connection
+mongoose.connect('mongodb://localhost:27017/vehicleMarketplace', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log('MongoDB Error:', err));
+
+// Schemas
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  phone: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const vehicleSchema = new mongoose.Schema({
+  sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  brand: { type: String, required: true },
+  model: { type: String, required: true },
+  year: { type: Number, required: true },
+  price: { type: Number, required: true },
+  type: { type: String, required: true },
+  condition: { type: String, required: true },
+  mileage: { type: Number, required: true },
+  description: { type: String },
+  image: { type: String },
+  contactName: { type: String, required: true },
+  contactPhone: { type: String, required: true },
+  status: { type: String, default: 'available' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const bidSchema = new mongoose.Schema({
+  vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  status: { type: String, default: 'pending' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const bookingSchema = new mongoose.Schema({
+  vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
+  buyerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  bidId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bid' },
+  finalPrice: { type: Number, required: true },
+  status: { type: String, default: 'confirmed' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', userSchema);
+const Vehicle = mongoose.model('Vehicle', vehicleSchema);
+const Bid = mongoose.model('Bid', bidSchema);
+const Booking = mongoose.model('Booking', bookingSchema);
+
+// Multer Configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5000000 },
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb('Error: Images Only!');
+    }
+  }
+});
+
+// JWT Secret
+const JWT_SECRET = 'your_jwt_secret_key_change_in_production';
+
+// Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+  
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Routes
+
+// User Registration
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+    
+    // Validation
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+    
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+    
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create user
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      phone
+    });
+    
+    await user.save();
+    
+    res.status(201).json({ message: 'Registration successful' });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// User Login
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
+    }
+    
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Generate token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get User Profile
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Post Vehicle
+app.post('/api/vehicles', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { brand, model, year, price, type, condition, mileage, description, contactName, contactPhone } = req.body;
+    
+    // Validation
+    if (!brand || !model || !year || !price || !type || !condition || !mileage || !contactName || !contactPhone) {
+      return res.status(400).json({ message: 'All required fields must be filled' });
+    }
+    
+    const vehicle = new Vehicle({
+      sellerId: req.user.userId,
+      brand,
+      model,
+      year: parseInt(year),
+      price: parseFloat(price),
+      type,
+      condition,
+      mileage: parseInt(mileage),
+      description,
+      image: req.file ? `/uploads/${req.file.filename}` : null,
+      contactName,
+      contactPhone
+    });
+    
+    await vehicle.save();
+    
+    // Emit new vehicle to all connected clients
+    io.emit('newVehicle', vehicle);
+    
+    res.status(201).json({ message: 'Vehicle posted successfully', vehicle });
+  } catch (error) {
+    console.error('Vehicle post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get All Vehicles
+app.get('/api/vehicles', async (req, res) => {
+  try {
+    const { brand, type, minPrice, maxPrice, minYear, maxYear, status } = req.query;
+    
+    let filter = {};
+    
+    if (brand) filter.brand = new RegExp(brand, 'i');
+    if (type) filter.type = type;
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = parseFloat(minPrice);
+      if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+    }
+    if (minYear || maxYear) {
+      filter.year = {};
+      if (minYear) filter.year.$gte = parseInt(minYear);
+      if (maxYear) filter.year.$lte = parseInt(maxYear);
+    }
+    if (status) filter.status = status;
+    else filter.status = 'available';
+    
+    const vehicles = await Vehicle.find(filter)
+      .populate('sellerId', 'name email')
+      .sort({ createdAt: -1 });
+    
+    res.json(vehicles);
+  } catch (error) {
+    console.error('Get vehicles error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get Single Vehicle
+app.get('/api/vehicles/:id', async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findById(req.params.id)
+      .populate('sellerId', 'name email phone');
+    
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' });
+    }
+    
+    res.json(vehicle);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Place Bid
+app.post('/api/bids', authenticateToken, async (req, res) => {
+  try {
+    const { vehicleId, amount } = req.body;
+    
+    // Validation
+    if (!vehicleId || !amount) {
+      return res.status(400).json({ message: 'Vehicle ID and amount required' });
+    }
+    
+    // Check if vehicle exists and is available
+    const vehicle = await Vehicle.findById(vehicleId);
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' });
+    }
+    
+    if (vehicle.status !== 'available') {
+      return res.status(400).json({ message: 'Vehicle is no longer available' });
+    }
+    
+    // Check if user is not the seller
+    if (vehicle.sellerId.toString() === req.user.userId) {
+      return res.status(400).json({ message: 'You cannot bid on your own vehicle' });
+    }
+    
+    // Check if bid amount is higher than current price
+    if (parseFloat(amount) <= vehicle.price) {
+      return res.status(400).json({ message: 'Bid must be higher than current price' });
+    }
+    
+    // Get highest bid
+    const highestBid = await Bid.findOne({ vehicleId, status: 'pending' })
+      .sort({ amount: -1 });
+    
+    if (highestBid && parseFloat(amount) <= highestBid.amount) {
+      return res.status(400).json({ message: 'Bid must be higher than current highest bid' });
+    }
+    
+    // Create bid
+    const bid = new Bid({
+      vehicleId,
+      userId: req.user.userId,
+      amount: parseFloat(amount)
+    });
+    
+    await bid.save();
+    
+    // Emit bid update to all connected clients
+    io.emit('newBid', { vehicleId, amount: parseFloat(amount) });
+    
+    res.status(201).json({ message: 'Bid placed successfully', bid });
+  } catch (error) {
+    console.error('Bid error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get Bids for Vehicle
+app.get('/api/vehicles/:id/bids', async (req, res) => {
+  try {
+    const bids = await Bid.find({ vehicleId: req.params.id, status: 'pending' })
+      .populate('userId', 'name email')
+      .sort({ amount: -1 });
+    
+    res.json(bids);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Confirm Booking (Auto-select highest bidder)
+app.post('/api/bookings', authenticateToken, async (req, res) => {
+  try {
+    const { vehicleId } = req.body;
+    
+    const vehicle = await Vehicle.findById(vehicleId);
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' });
+    }
+    
+    if (vehicle.status !== 'available') {
+      return res.status(400).json({ message: 'Vehicle already booked' });
+    }
+    
+    // Only seller can confirm booking
+    if (vehicle.sellerId.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Only seller can confirm booking' });
+    }
+    
+    // Get highest bid
+    const highestBid = await Bid.findOne({ vehicleId, status: 'pending' })
+      .sort({ amount: -1 });
+    
+    if (!highestBid) {
+      return res.status(400).json({ message: 'No bids available' });
+    }
+    
+    // Create booking
+    const booking = new Booking({
+      vehicleId,
+      buyerId: highestBid.userId,
+      sellerId: vehicle.sellerId,
+      bidId: highestBid._id,
+      finalPrice: highestBid.amount
+    });
+    
+    await booking.save();
+    
+    // Update vehicle status
+    vehicle.status = 'sold';
+    await vehicle.save();
+    
+    // Update bid status
+    highestBid.status = 'accepted';
+    await highestBid.save();
+    
+    // Reject other bids
+    await Bid.updateMany(
+      { vehicleId, _id: { $ne: highestBid._id }, status: 'pending' },
+      { status: 'rejected' }
+    );
+    
+    // Emit booking confirmation
+    io.emit('bookingConfirmed', { vehicleId, bookingId: booking._id });
+    
+    res.status(201).json({ message: 'Booking confirmed', booking });
+  } catch (error) {
+    console.error('Booking error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get User's Posted Vehicles
+app.get('/api/user/vehicles', authenticateToken, async (req, res) => {
+  try {
+    const vehicles = await Vehicle.find({ sellerId: req.user.userId })
+      .sort({ createdAt: -1 });
+    res.json(vehicles);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get User's Bids
+app.get('/api/user/bids', authenticateToken, async (req, res) => {
+  try {
+    const bids = await Bid.find({ userId: req.user.userId })
+      .populate('vehicleId')
+      .sort({ createdAt: -1 });
+    res.json(bids);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get User's Bookings (as buyer or seller)
+app.get('/api/user/bookings', authenticateToken, async (req, res) => {
+  try {
+    const bookings = await Booking.find({
+      $or: [
+        { buyerId: req.user.userId },
+        { sellerId: req.user.userId }
+      ]
+    })
+    .populate('vehicleId')
+    .populate('buyerId', 'name email phone')
+    .populate('sellerId', 'name email phone')
+    .sort({ createdAt: -1 });
+    
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Socket.IO Connection
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
+// Password Reset Token Schema
+const resetTokenSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  token: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: 3600 } // Token expires in 1 hour
+});
+
+const ResetToken = mongoose.model('ResetToken', resetTokenSchema);
+
+// Email Configuration (Using Gmail as example)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com', // Change this
+    pass: process.env.EMAIL_PASS || 'odqnggpjigacloye'      // Change this
+  }
+});
+
+// Alternative: For testing without real email (ethereal.email)
+// Uncomment this block if you want to test without Gmail setup
+/*
+async function createTestAccount() {
+  const testAccount = await nodemailer.createTestAccount();
+  return nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass
+    }
+  });
+}
+*/
+
+// Route 1: Request Password Reset
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    
+    // Find user by email
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      // Don't reveal if user exists or not (security best practice)
+      return res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
+    }
+    
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Hash the token before storing (security best practice)
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    // Delete any existing reset tokens for this user
+    await ResetToken.deleteMany({ userId: user._id });
+    
+    // Save new reset token
+    await ResetToken.create({
+      userId: user._id,
+      token: hashedToken
+    });
+    
+    // Create reset URL (adjust the domain in production)
+    const resetUrl = `http://localhost:5500/reset-password.html?token=${resetToken}&email=${email}`;
+    
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
+      to: user.email,
+      subject: 'AutoHub - Password Reset Request',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; padding: 15px 30px; background: #2563eb; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Password Reset Request</h1>
+            </div>
+            <div class="content">
+              <p>Hello <strong>${user.name}</strong>,</p>
+              
+              <p>We received a request to reset your password for your AutoHub account.</p>
+              
+              <p>Click the button below to reset your password:</p>
+              
+              <center>
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </center>
+              
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="background: #fff; padding: 10px; border: 1px solid #ddd; word-break: break-all;">${resetUrl}</p>
+              
+              <div class="warning">
+                <strong>⚠️ Important:</strong>
+                <ul>
+                  <li>This link will expire in <strong>1 hour</strong></li>
+                  <li>If you didn't request this, please ignore this email</li>
+                  <li>Your password won't change until you create a new one</li>
+                </ul>
+              </div>
+              
+              <p>Best regards,<br><strong>AutoHub Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+              <p>&copy; 2025 AutoHub. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+    
+    // Send email
+    await transporter.sendMail(mailOptions);
+    
+    console.log(`Password reset email sent to: ${email}`);
+    
+    res.json({ 
+      message: 'If an account exists with this email, a reset link has been sent.',
+      // Remove these in production (only for testing)
+      resetUrl: resetUrl,
+      token: resetToken
+    });
+    
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Error sending reset email. Please try again.' });
+  }
+});
+
+// Route 2: Verify Reset Token
+app.get('/api/verify-reset-token', async (req, res) => {
+  try {
+    const { token, email } = req.query;
+    
+    if (!token || !email) {
+      return res.status(400).json({ message: 'Token and email are required' });
+    }
+    
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid reset link' });
+    }
+    
+    // Hash the token to compare
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find valid token
+    const resetToken = await ResetToken.findOne({
+      userId: user._id,
+      token: hashedToken
+    });
+    
+    if (!resetToken) {
+      return res.status(400).json({ message: 'Invalid or expired reset link' });
+    }
+    
+    res.json({ message: 'Token is valid', valid: true });
+    
+  } catch (error) {
+    console.error('Verify token error:', error);
+    res.status(500).json({ message: 'Error verifying token' });
+  }
+});
+
+// Route 3: Reset Password
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { token, email, newPassword } = req.body;
+    
+    if (!token || !email || !newPassword) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+    
+    // Validate password
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+    
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid reset link' });
+    }
+    
+    // Hash the token to compare
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find and verify token
+    const resetToken = await ResetToken.findOne({
+      userId: user._id,
+      token: hashedToken
+    });
+    
+    if (!resetToken) {
+      return res.status(400).json({ message: 'Invalid or expired reset link' });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update user password
+    user.password = hashedPassword;
+    await user.save();
+    
+    // Delete used token
+    await ResetToken.deleteOne({ _id: resetToken._id });
+    
+    // Send confirmation email
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
+      to: user.email,
+      subject: 'AutoHub - Password Changed Successfully',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .success { background: #d1fae5; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>✅ Password Changed Successfully</h1>
+            </div>
+            <div class="content">
+              <p>Hello <strong>${user.name}</strong>,</p>
+              
+              <div class="success">
+                <strong>✅ Success!</strong><br>
+                Your AutoHub password has been changed successfully.
+              </div>
+              
+              <p>You can now log in with your new password.</p>
+              
+              <p><strong>If you didn't make this change:</strong><br>
+              Please contact our support team immediately at support@autohub.com</p>
+              
+              <p>Best regards,<br><strong>AutoHub Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>&copy; 2025 AutoHub. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+    
+    await transporter.sendMail(mailOptions);
+    
+    console.log(`Password reset successful for: ${email}`);
+    
+    res.json({ message: 'Password reset successful! You can now login with your new password.' });
+    
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Error resetting password. Please try again.' });
+  }
+});
+
+// Start Server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
