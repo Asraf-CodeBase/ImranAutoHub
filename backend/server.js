@@ -42,9 +42,8 @@ console.log('📁 Static files directory:', __dirname);
 console.log('🖼️  Uploads directory:', uploadsDir);
 
 // MongoDB Connection
-const MONGODB_URL = process.env.MONGODB_URI;
-
-mongoose.connect('mongodb+srv://autoHub_DB:JipGGsejA5LgVhKI@autohubcluster.h1cwt4d.mongodb.net/?retryWrites=true&w=majority&appName=AutoHubCluster', {
+require("dotenv").config();
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('✅ MongoDB Connected'))
