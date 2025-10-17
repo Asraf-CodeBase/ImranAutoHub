@@ -3,4 +3,4 @@ package-lock.json
 recent codes
 .htaccess
 test-password.js
-.env
+.env.production
