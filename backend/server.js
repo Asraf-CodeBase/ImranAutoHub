@@ -42,7 +42,7 @@ console.log('📁 Static files directory:', __dirname);
 console.log('🖼️  Uploads directory:', uploadsDir);
 
 // MongoDB Connection
-require("dotenv").config();
+require("dotenv").config({ path: __dirname + "/.env.production" });
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -147,8 +147,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
-    pass: process.env.EMAIL_PASS || 'odqnggpjigacloye'
+    user: process.env.EMAIL_USER ,
+    pass: process.env.EMAIL_PASS
   }
 });
 
