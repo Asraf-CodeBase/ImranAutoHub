@@ -533,6 +533,7 @@ app.post('/api/forgot-password', async (req, res) => {
     const user = await User.findOne({ email });
     
     if (!user) {
+      // Don't reveal if user exists or not for security
       return res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
     }
     
@@ -546,7 +547,9 @@ app.post('/api/forgot-password', async (req, res) => {
       token: hashedToken
     });
     
-    const resetUrl = `http://localhost:5500/frontend/pages/reset-password.html?token=${resetToken}&email=${email}`;
+    // UPDATED: Use environment variable or current domain
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5500';
+    const resetUrl = `${baseUrl}/frontend/pages/reset-password.html?token=${resetToken}&email=${email}`;
     
     const mailOptions = {
       from: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
@@ -559,11 +562,39 @@ app.post('/api/forgot-password', async (req, res) => {
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; padding: 15px 30px; background: #2563eb; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-            .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
+            .header { 
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+              color: white; 
+              padding: 30px; 
+              text-align: center; 
+              border-radius: 10px 10px 0 0; 
+            }
+            .content { 
+              background: #f9f9f9; 
+              padding: 30px; 
+              border-radius: 0 0 10px 10px; 
+            }
+            .button { 
+              display: inline-block; 
+              padding: 15px 30px; 
+              background: #2563eb; 
+              color: white; 
+              text-decoration: none; 
+              border-radius: 5px; 
+              margin: 20px 0; 
+            }
+            .footer { 
+              text-align: center; 
+              margin-top: 20px; 
+              color: #666; 
+              font-size: 12px; 
+            }
+            .warning { 
+              background: #fff3cd; 
+              padding: 15px; 
+              border-left: 4px solid #ffc107; 
+              margin: 20px 0; 
+            }
           </style>
         </head>
         <body>
@@ -612,8 +643,11 @@ app.post('/api/forgot-password', async (req, res) => {
     
     res.json({ 
       message: 'If an account exists with this email, a reset link has been sent.',
-      resetUrl: resetUrl,
-      token: resetToken
+      // Remove these in production for security
+      ...(process.env.NODE_ENV === 'development' && {
+        resetUrl: resetUrl,
+        token: resetToken
+      })
     });
     
   } catch (error) {
@@ -691,6 +725,7 @@ app.post('/api/reset-password', async (req, res) => {
     
     await ResetToken.deleteOne({ _id: resetToken._id });
     
+    // Send confirmation email
     const mailOptions = {
       from: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
       to: user.email,
@@ -702,10 +737,30 @@ app.post('/api/reset-password', async (req, res) => {
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .success { background: #d1fae5; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .header { 
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+              color: white; 
+              padding: 30px; 
+              text-align: center; 
+              border-radius: 10px 10px 0 0; 
+            }
+            .content { 
+              background: #f9f9f9; 
+              padding: 30px; 
+              border-radius: 0 0 10px 10px; 
+            }
+            .success { 
+              background: #d1fae5; 
+              padding: 15px; 
+              border-left: 4px solid #10b981; 
+              margin: 20px 0; 
+            }
+            .footer { 
+              text-align: center; 
+              margin-top: 20px; 
+              color: #666; 
+              font-size: 12px; 
+            }
           </style>
         </head>
         <body>

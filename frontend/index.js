@@ -1,6 +1,6 @@
 // Configuration
-const API_URL = 'http://localhost:5000/api';
-const SOCKET_URL = 'http://localhost:5000';
+const API_URL = window.APP_CONFIG?.API_URL || 'http://localhost:5000/api';
+const SOCKET_URL = window.APP_CONFIG?.SOCKET_URL || 'http://localhost:5000';
 let socket;
 let currentUser = null;
 let currentVehicleId = null;
