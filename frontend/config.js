@@ -4,7 +4,7 @@
 const config = {
     // Development
     development: {
-        API_URL: 'http://localhost:5000/api',
+        API_URL: 'https://imran-auto-hub-backend.vercel.app/api',
         SOCKET_URL: 'http://localhost:5000'
     },
     
@@ -28,5 +28,5 @@ console.log('Environment:', isDevelopment ? 'Development' : 'Production');
 console.log('API URL:', ENV.API_URL);
 
 window.APP_CONFIG = {
-    API_URL: 'https://your-backend-name.vercel.app/api'
+    API_URL: 'https://imran-auto-hub-backend.vercel.app/api'
 };

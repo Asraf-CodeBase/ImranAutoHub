@@ -5,6 +5,9 @@ let currentUser = null;
 let currentVehicleId = null;
 let selectedImages = [];
 
+console.log('🔍 API URL:', API_URL);
+console.log('🔍 Config object:', window.APP_CONFIG);
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
