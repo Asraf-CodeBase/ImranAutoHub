@@ -5,49 +5,44 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const cors = require('cors');
-const socketIO = require('socket.io');
-const http = require('http');
-const fs = require('fs');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIO(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('✅ Uploads directory created');
-}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// IMPORTANT: Serve static files from uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// MongoDB Connection with connection pooling for serverless
+let cachedDb = null;
 
-// Also serve static HTML files
-app.use(express.static(__dirname));
+async function connectToDatabase() {
+  if (cachedDb && mongoose.connection.readyState === 1) {
+    console.log('✅ Using cached database connection');
+    return cachedDb;
+  }
 
-console.log('📁 Static files directory:', __dirname);
-console.log('🖼️  Uploads directory:', uploadsDir);
+  try {
+    const opts = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+    };
 
-// MongoDB Connection
-require("dotenv").config({ path: __dirname + "/.env.production" });
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.log('❌ MongoDB Error:', err));
+    await mongoose.connect(process.env.MONGODB_URI, opts);
+    cachedDb = mongoose.connection;
+    console.log('✅ New MongoDB connection established');
+    return cachedDb;
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    throw error;
+  }
+}
 
 // Schemas
 const userSchema = new mongoose.Schema({
@@ -99,47 +94,57 @@ const resetTokenSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: 3600 }
 });
 
-const User = mongoose.model('User', userSchema);
-const Vehicle = mongoose.model('Vehicle', vehicleSchema);
-const Bid = mongoose.model('Bid', bidSchema);
-const Booking = mongoose.model('Booking', bookingSchema);
-const ResetToken = mongoose.model('ResetToken', resetTokenSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Vehicle = mongoose.models.Vehicle || mongoose.model('Vehicle', vehicleSchema);
+const Bid = mongoose.models.Bid || mongoose.model('Bid', bidSchema);
+const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
+const ResetToken = mongoose.models.ResetToken || mongoose.model('ResetToken', resetTokenSchema);
 
-// Multer Configuration - FIXED
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-    console.log('💾 Saving file:', uniqueName);
-    cb(null, uniqueName);
-  }
+// Cloudinary Configuration for Image Uploads
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Multer Configuration for Memory Storage (Vercel serverless)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
   limits: { fileSize: 5000000 }, // 5MB per file
   fileFilter: (req, file, cb) => {
-    console.log('📄 Checking file:', file.originalname);
-    console.log('📄 MIME type:', file.mimetype);
-    console.log('📄 Extension:', path.extname(file.originalname));
-    
-    // Check MIME type
     const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    
     if (allowedMimes.includes(file.mimetype)) {
-      console.log('✅ File accepted:', file.originalname);
       return cb(null, true);
     } else {
-      console.log('❌ File rejected - Invalid MIME type:', file.mimetype);
       return cb(new Error('Only image files (JPEG, PNG, GIF, WEBP) are allowed!'), false);
     }
   }
 });
 
+// Helper function to upload to Cloudinary
+async function uploadToCloudinary(fileBuffer, filename) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'autohub-vehicles',
+        public_id: `${Date.now()}-${filename}`,
+        resource_type: 'auto'
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    uploadStream.end(fileBuffer);
+  });
+}
+
 // JWT Secret
-const JWT_SECRET = 'your_jwt_secret_key_change_in_production';
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
 
 // Email Configuration
 const transporter = nodemailer.createTransport({
@@ -147,7 +152,7 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL_USER ,
+    user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
@@ -169,11 +174,28 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Routes
+// Health Check
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectToDatabase();
+    res.json({ 
+      status: 'OK', 
+      database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'Error', 
+      message: error.message 
+    });
+  }
+});
 
 // User Registration
 app.post('/api/register', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { name, email, password, phone } = req.body;
     
     if (!name || !email || !password || !phone) {
@@ -210,6 +232,8 @@ app.post('/api/register', async (req, res) => {
 // User Login
 app.post('/api/login', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { email, password } = req.body;
     
     if (!email || !password) {
@@ -249,6 +273,7 @@ app.post('/api/login', async (req, res) => {
 // Get User Profile
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
   try {
+    await connectToDatabase();
     const user = await User.findById(req.user.userId).select('-password');
     res.json(user);
   } catch (error) {
@@ -256,28 +281,27 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// Post Vehicle - FIXED for multiple images
+// Post Vehicle with Cloudinary Upload
 app.post('/api/vehicles', authenticateToken, upload.array('images', 10), async (req, res) => {
   try {
-    console.log('📝 Received vehicle post request');
-    console.log('📎 Files received:', req.files?.length || 0);
-    console.log('📋 Body data:', req.body);
+    await connectToDatabase();
     
     const { brand, model, year, price, type, condition, mileage, description, contactName, contactPhone } = req.body;
     
-    // Validation
     if (!brand || !model || !year || !price || !type || !condition || !mileage || !contactName || !contactPhone) {
       return res.status(400).json({ message: 'All required fields must be filled' });
     }
     
-    // Check if at least one image is uploaded
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'At least one image is required' });
     }
     
-    // Store all image paths - FIXED PATH
-    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
-    console.log('🖼️  Image paths saved:', imagePaths);
+    // Upload images to Cloudinary
+    const imageUploadPromises = req.files.map(file => 
+      uploadToCloudinary(file.buffer, file.originalname)
+    );
+    
+    const imageUrls = await Promise.all(imageUploadPromises);
     
     const vehicle = new Vehicle({
       sellerId: req.user.userId,
@@ -289,20 +313,16 @@ app.post('/api/vehicles', authenticateToken, upload.array('images', 10), async (
       condition,
       mileage: parseInt(mileage),
       description,
-      images: imagePaths,
+      images: imageUrls,
       contactName,
       contactPhone
     });
     
     await vehicle.save();
-    console.log('✅ Vehicle saved to database:', vehicle._id);
-    
-    // Emit new vehicle to all connected clients
-    io.emit('newVehicle', vehicle);
     
     res.status(201).json({ message: 'Vehicle posted successfully', vehicle });
   } catch (error) {
-    console.error('❌ Vehicle post error:', error);
+    console.error('Vehicle post error:', error);
     res.status(500).json({ message: 'Server error: ' + error.message });
   }
 });
@@ -310,6 +330,8 @@ app.post('/api/vehicles', authenticateToken, upload.array('images', 10), async (
 // Get All Vehicles
 app.get('/api/vehicles', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { brand, type, minPrice, maxPrice, minYear, maxYear, status } = req.query;
     
     let filter = {};
@@ -333,7 +355,6 @@ app.get('/api/vehicles', async (req, res) => {
       .populate('sellerId', 'name email')
       .sort({ createdAt: -1 });
     
-    console.log(`📦 Sending ${vehicles.length} vehicles`);
     res.json(vehicles);
   } catch (error) {
     console.error('Get vehicles error:', error);
@@ -344,6 +365,8 @@ app.get('/api/vehicles', async (req, res) => {
 // Get Single Vehicle
 app.get('/api/vehicles/:id', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const vehicle = await Vehicle.findById(req.params.id)
       .populate('sellerId', 'name email phone');
     
@@ -360,6 +383,8 @@ app.get('/api/vehicles/:id', async (req, res) => {
 // Place Bid
 app.post('/api/bids', authenticateToken, async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { vehicleId, amount } = req.body;
     
     if (!vehicleId || !amount) {
@@ -398,8 +423,6 @@ app.post('/api/bids', authenticateToken, async (req, res) => {
     
     await bid.save();
     
-    io.emit('newBid', { vehicleId, amount: parseFloat(amount) });
-    
     res.status(201).json({ message: 'Bid placed successfully', bid });
   } catch (error) {
     console.error('Bid error:', error);
@@ -410,6 +433,8 @@ app.post('/api/bids', authenticateToken, async (req, res) => {
 // Get Bids for Vehicle
 app.get('/api/vehicles/:id/bids', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const bids = await Bid.find({ vehicleId: req.params.id, status: 'pending' })
       .populate('userId', 'name email')
       .sort({ amount: -1 });
@@ -423,6 +448,8 @@ app.get('/api/vehicles/:id/bids', async (req, res) => {
 // Confirm Booking
 app.post('/api/bookings', authenticateToken, async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { vehicleId } = req.body;
     
     const vehicle = await Vehicle.findById(vehicleId);
@@ -466,8 +493,6 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
       { status: 'rejected' }
     );
     
-    io.emit('bookingConfirmed', { vehicleId, bookingId: booking._id });
-    
     res.status(201).json({ message: 'Booking confirmed', booking });
   } catch (error) {
     console.error('Booking error:', error);
@@ -478,6 +503,8 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
 // Get User's Posted Vehicles
 app.get('/api/user/vehicles', authenticateToken, async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const vehicles = await Vehicle.find({ sellerId: req.user.userId })
       .sort({ createdAt: -1 });
     res.json(vehicles);
@@ -489,6 +516,8 @@ app.get('/api/user/vehicles', authenticateToken, async (req, res) => {
 // Get User's Bids
 app.get('/api/user/bids', authenticateToken, async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const bids = await Bid.find({ userId: req.user.userId })
       .populate('vehicleId')
       .sort({ createdAt: -1 });
@@ -501,6 +530,8 @@ app.get('/api/user/bids', authenticateToken, async (req, res) => {
 // Get User's Bookings
 app.get('/api/user/bookings', authenticateToken, async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const bookings = await Booking.find({
       $or: [
         { buyerId: req.user.userId },
@@ -523,6 +554,8 @@ app.get('/api/user/bookings', authenticateToken, async (req, res) => {
 // Request Password Reset
 app.post('/api/forgot-password', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { email } = req.body;
     
     if (!email) {
@@ -532,7 +565,6 @@ app.post('/api/forgot-password', async (req, res) => {
     const user = await User.findOne({ email });
     
     if (!user) {
-      // Don't reveal if user exists or not for security
       return res.json({ message: 'If an account exists with this email, a reset link has been sent.' });
     }
     
@@ -546,12 +578,11 @@ app.post('/api/forgot-password', async (req, res) => {
       token: hashedToken
     });
     
-    // UPDATED: Use environment variable or current domain
-    const baseUrl = process.env.BASE_URL || 'http://localhost:5500';
+    const baseUrl = process.env.BASE_URL || 'https://your-frontend-domain.vercel.app';
     const resetUrl = `${baseUrl}/frontend/pages/reset-password.html?token=${resetToken}&email=${email}`;
     
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'AutoHub - Password Reset Request',
       html: `
@@ -599,7 +630,7 @@ app.post('/api/forgot-password', async (req, res) => {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🔐 Password Reset Request</h1>
+              <h1>🔒 Password Reset Request</h1>
             </div>
             <div class="content">
               <p>Hello <strong>${user.name}</strong>,</p>
@@ -638,15 +669,8 @@ app.post('/api/forgot-password', async (req, res) => {
     
     await transporter.sendMail(mailOptions);
     
-    console.log(`Password reset email sent to: ${email}`);
-    
     res.json({ 
-      message: 'If an account exists with this email, a reset link has been sent.',
-      // Remove these in production for security
-      ...(process.env.NODE_ENV === 'development' && {
-        resetUrl: resetUrl,
-        token: resetToken
-      })
+      message: 'If an account exists with this email, a reset link has been sent.'
     });
     
   } catch (error) {
@@ -658,6 +682,8 @@ app.post('/api/forgot-password', async (req, res) => {
 // Verify Reset Token
 app.get('/api/verify-reset-token', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { token, email } = req.query;
     
     if (!token || !email) {
@@ -691,6 +717,8 @@ app.get('/api/verify-reset-token', async (req, res) => {
 // Reset Password
 app.post('/api/reset-password', async (req, res) => {
   try {
+    await connectToDatabase();
+    
     const { token, email, newPassword } = req.body;
     
     if (!token || !email || !newPassword) {
@@ -724,9 +752,8 @@ app.post('/api/reset-password', async (req, res) => {
     
     await ResetToken.deleteOne({ _id: resetToken._id });
     
-    // Send confirmation email
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'pheonixbycrpt@gmail.com',
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'AutoHub - Password Changed Successfully',
       html: `
@@ -793,8 +820,6 @@ app.post('/api/reset-password', async (req, res) => {
     
     await transporter.sendMail(mailOptions);
     
-    console.log(`Password reset successful for: ${email}`);
-    
     res.json({ message: 'Password reset successful! You can now login with your new password.' });
     
   } catch (error) {
@@ -803,20 +828,5 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-// Socket.IO Connection
-io.on('connection', (socket) => {
-  console.log('🔌 Client connected:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('🔌 Client disconnected:', socket.id);
-  });
-});
-
-// Start Server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`\n🚀 Server running on port ${PORT}`);
-  console.log(`📱 API: http://localhost:${PORT}/api`);
-  console.log(`🖼️  Images: http://localhost:${PORT}/uploads`);
-  console.log(`\n✅ Ready to accept connections!\n`);
-});
+// Export for Vercel
+module.exports = app;

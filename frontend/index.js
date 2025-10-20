@@ -1,77 +1,69 @@
-// Configuration
-const API_URL = window.APP_CONFIG?.API_URL || 'http://localhost:5000/api';
-const SOCKET_URL = window.APP_CONFIG?.SOCKET_URL || 'http://localhost:5000';
-let socket;
+// Configuration - Update this with your Vercel backend URL
+const API_URL = window.APP_CONFIG?.API_URL || 'https://imran-auto-hub-backend.vercel.app/api';
+
 let currentUser = null;
 let currentVehicleId = null;
-let selectedImages = []; // Store selected images
+let selectedImages = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     loadVehicles();
     initializeEventListeners();
-    initializeSocket();
 });
-
-// Socket.IO initialization
-function initializeSocket() {
-    socket = io(SOCKET_URL);
-    
-    socket.on('connect', () => {
-        console.log('Socket connected');
-    });
-
-    socket.on('newVehicle', (vehicle) => {
-        loadVehicles();
-    });
-
-    socket.on('newBid', (data) => {
-        if (currentVehicleId === data.vehicleId) {
-            loadVehicleBids(data.vehicleId);
-        }
-    });
-
-    socket.on('bookingConfirmed', (data) => {
-        loadVehicles();
-        if (currentUser) {
-            loadDashboard();
-        }
-    });
-}
 
 // Event Listeners
 function initializeEventListeners() {
     // Register Form
-    document.getElementById('registerForm').addEventListener('submit', handleRegister);
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
     
     // Login Form
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
     
-    // Sell Vehicle Form - FIXED
-    document.getElementById('sellVehicleForm').addEventListener('submit', handleSellVehicle);
+    // Sell Vehicle Form
+    const sellVehicleForm = document.getElementById('sellVehicleForm');
+    if (sellVehicleForm) {
+        sellVehicleForm.addEventListener('submit', handleSellVehicle);
+    }
     
     // Search Form
-    document.getElementById('searchForm').addEventListener('submit', handleSearch);
+    const searchForm = document.getElementById('searchForm');
+    if (searchForm) {
+        searchForm.addEventListener('submit', handleSearch);
+    }
     
     // Password Strength
-    document.getElementById('regPassword').addEventListener('input', checkPasswordStrength);
+    const regPassword = document.getElementById('regPassword');
+    if (regPassword) {
+        regPassword.addEventListener('input', checkPasswordStrength);
+    }
     
     // Image Upload Handler
-    document.getElementById('sellImages').addEventListener('change', handleImageSelection);
+    const sellImages = document.getElementById('sellImages');
+    if (sellImages) {
+        sellImages.addEventListener('change', handleImageSelection);
+    }
     
     // Navbar Scroll Effect
     window.addEventListener('scroll', () => {
         const navbar = document.getElementById('navbar');
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
+        if (navbar) {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
         }
     });
 }
 
-// NEW: Handle Multiple Image Selection
+// Handle Multiple Image Selection
 function handleImageSelection(event) {
     const files = Array.from(event.target.files);
     
@@ -82,8 +74,8 @@ function handleImageSelection(event) {
         return;
     }
     
-    // Validate file sizes
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file sizes (5MB per file)
+    const maxSize = 5 * 1024 * 1024;
     for (let file of files) {
         if (file.size > maxSize) {
             alert(`File ${file.name} is too large. Maximum size is 5MB per image.`);
@@ -96,11 +88,13 @@ function handleImageSelection(event) {
     displayImagePreviews(files);
 }
 
-// NEW: Display Image Previews
+// Display Image Previews
 function displayImagePreviews(files) {
     const container = document.getElementById('imagePreviewContainer');
     const previewsDiv = document.getElementById('imagePreviews');
     const countDiv = document.getElementById('imageCount');
+    
+    if (!container || !previewsDiv || !countDiv) return;
     
     if (files.length === 0) {
         container.style.display = 'none';
@@ -132,12 +126,13 @@ function displayImagePreviews(files) {
     countDiv.innerHTML = `<i class="fas fa-images"></i> ${files.length} image${files.length > 1 ? 's' : ''} selected`;
 }
 
-// NEW: Remove Image from Selection
+// Remove Image from Selection
 function removeImage(index) {
     const dt = new DataTransfer();
     const input = document.getElementById('sellImages');
-    const files = Array.from(input.files);
+    if (!input) return;
     
+    const files = Array.from(input.files);
     files.splice(index, 1);
     
     files.forEach(file => {
@@ -155,8 +150,15 @@ function checkAuth() {
     const user = localStorage.getItem('user');
     
     if (token && user) {
-        currentUser = JSON.parse(user);
-        updateAuthUI(true);
+        try {
+            currentUser = JSON.parse(user);
+            updateAuthUI(true);
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            updateAuthUI(false);
+        }
     } else {
         updateAuthUI(false);
     }
@@ -166,12 +168,14 @@ function updateAuthUI(isAuthenticated) {
     const authButtons = document.getElementById('authButtons');
     const userMenu = document.getElementById('userMenu');
     
-    if (isAuthenticated) {
-        authButtons.classList.add('hidden');
-        userMenu.classList.remove('hidden');
-    } else {
-        authButtons.classList.remove('hidden');
-        userMenu.classList.add('hidden');
+    if (authButtons && userMenu) {
+        if (isAuthenticated) {
+            authButtons.classList.add('hidden');
+            userMenu.classList.remove('hidden');
+        } else {
+            authButtons.classList.remove('hidden');
+            userMenu.classList.add('hidden');
+        }
     }
 }
 
@@ -195,6 +199,10 @@ async function handleRegister(e) {
         return;
     }
     
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    
     try {
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
@@ -208,12 +216,17 @@ async function handleRegister(e) {
         
         if (response.ok) {
             showSuccess('registerSuccess', 'Registration successful! Please login.');
+            e.target.reset();
             setTimeout(() => showLogin(), 2000);
         } else {
-            showError('registerError', data.message);
+            showError('registerError', data.message || 'Registration failed');
         }
     } catch (error) {
-        showError('registerError', 'Registration failed. Please try again.');
+        console.error('Registration error:', error);
+        showError('registerError', 'Network error. Please check your connection and try again.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
     }
 }
 
@@ -222,6 +235,10 @@ async function handleLogin(e) {
     
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
     
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -239,12 +256,17 @@ async function handleLogin(e) {
             localStorage.setItem('user', JSON.stringify(data.user));
             currentUser = data.user;
             updateAuthUI(true);
-            showHome();
+            showSuccess('loginSuccess', 'Login successful!');
+            setTimeout(() => showHome(), 1000);
         } else {
-            showError('loginError', data.message);
+            showError('loginError', data.message || 'Login failed');
         }
     } catch (error) {
-        showError('loginError', 'Login failed. Please try again.');
+        console.error('Login error:', error);
+        showError('loginError', 'Network error. Please check your connection and try again.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
     }
 }
 
@@ -261,16 +283,25 @@ async function loadVehicles(filters = {}) {
     try {
         const params = new URLSearchParams(filters);
         const response = await fetch(`${API_URL}/vehicles?${params}`);
-        const vehicles = await response.json();
         
+        if (!response.ok) {
+            throw new Error('Failed to load vehicles');
+        }
+        
+        const vehicles = await response.json();
         displayVehicles(vehicles);
     } catch (error) {
         console.error('Error loading vehicles:', error);
+        const grid = document.getElementById('vehicleGrid');
+        if (grid) {
+            grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">Failed to load vehicles. Please try again later.</p>';
+        }
     }
 }
 
 function displayVehicles(vehicles) {
     const grid = document.getElementById('vehicleGrid');
+    if (!grid) return;
     
     if (vehicles.length === 0) {
         grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No vehicles found</p>';
@@ -278,9 +309,9 @@ function displayVehicles(vehicles) {
     }
     
     grid.innerHTML = vehicles.map(vehicle => {
-        // Use first image from images array, or fallback
+        // Use Cloudinary URL directly from backend
         const imageUrl = vehicle.images && vehicle.images.length > 0 
-            ? `${API_URL.replace('/api', '')}${vehicle.images[0]}`
+            ? vehicle.images[0]
             : 'https://via.placeholder.com/400x300?text=No+Image';
         
         return `
@@ -328,23 +359,28 @@ async function showVehicleDetails(vehicleId) {
     
     try {
         const response = await fetch(`${API_URL}/vehicles/${vehicleId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load vehicle details');
+        }
+        
         const vehicle = await response.json();
         
         const isSeller = currentUser && vehicle.sellerId._id === currentUser.id;
         
-        // Create image gallery
+        // Create image gallery with Cloudinary URLs
         let imageGalleryHTML = '';
         if (vehicle.images && vehicle.images.length > 0) {
             imageGalleryHTML = `
                 <div style="position: relative;">
-                    <img id="mainImage" src="${API_URL.replace('/api', '')}${vehicle.images[0]}" alt="${vehicle.brand} ${vehicle.model}" 
+                    <img id="mainImage" src="${vehicle.images[0]}" alt="${vehicle.brand} ${vehicle.model}" 
                          style="width: 100%; height: 400px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem;" 
                          onerror="this.src='https://via.placeholder.com/800x400?text=No+Image'">
                     
                     ${vehicle.images.length > 1 ? `
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; margin-bottom: 2rem;">
                             ${vehicle.images.map((img, index) => `
-                                <img src="${API_URL.replace('/api', '')}${img}" 
+                                <img src="${img}" 
                                      onclick="document.getElementById('mainImage').src=this.src" 
                                      style="width: 100%; height: 80px; object-fit: cover; border-radius: 5px; cursor: pointer; border: 2px solid ${index === 0 ? 'var(--primary)' : 'transparent'};" 
                                      onerror="this.src='https://via.placeholder.com/100x80?text=No+Image'">
@@ -361,6 +397,11 @@ async function showVehicleDetails(vehicleId) {
         }
         
         const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        const vehicleModal = document.getElementById('vehicleModal');
+        
+        if (!modalBody || !modalTitle || !vehicleModal) return;
+        
         modalBody.innerHTML = `
             ${imageGalleryHTML}
             
@@ -447,23 +488,30 @@ async function showVehicleDetails(vehicleId) {
             `}
         `;
         
-        document.getElementById('modalTitle').textContent = `${vehicle.brand} ${vehicle.model}`;
-        document.getElementById('vehicleModal').style.display = 'block';
+        modalTitle.textContent = `${vehicle.brand} ${vehicle.model}`;
+        vehicleModal.style.display = 'block';
         
         if (vehicle.status === 'available') {
             loadVehicleBids(vehicleId);
         }
     } catch (error) {
         console.error('Error loading vehicle details:', error);
+        alert('Failed to load vehicle details. Please try again.');
     }
 }
 
 async function loadVehicleBids(vehicleId) {
     try {
         const response = await fetch(`${API_URL}/vehicles/${vehicleId}/bids`);
-        const bids = await response.json();
         
+        if (!response.ok) {
+            throw new Error('Failed to load bids');
+        }
+        
+        const bids = await response.json();
         const bidList = document.getElementById('bidList');
+        
+        if (!bidList) return;
         
         if (bids.length === 0) {
             bidList.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.7);">No bids yet. Be the first to bid!</p>';
@@ -481,6 +529,10 @@ async function loadVehicleBids(vehicleId) {
         `).join('');
     } catch (error) {
         console.error('Error loading bids:', error);
+        const bidList = document.getElementById('bidList');
+        if (bidList) {
+            bidList.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.7);">Failed to load bids</p>';
+        }
     }
 }
 
@@ -489,6 +541,15 @@ async function placeBid(e, vehicleId) {
     
     const amount = document.getElementById('bidAmount').value;
     const token = localStorage.getItem('token');
+    
+    if (!token) {
+        showLogin();
+        return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Bid...';
     
     try {
         const response = await fetch(`${API_URL}/bids`, {
@@ -507,10 +568,14 @@ async function placeBid(e, vehicleId) {
             loadVehicleBids(vehicleId);
             alert('Bid placed successfully!');
         } else {
-            alert(data.message);
+            alert(data.message || 'Failed to place bid');
         }
     } catch (error) {
-        alert('Failed to place bid. Please try again.');
+        console.error('Bid error:', error);
+        alert('Network error. Failed to place bid. Please try again.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-gavel"></i> Place Bid';
     }
 }
 
@@ -520,6 +585,11 @@ async function confirmBooking(vehicleId) {
     }
     
     const token = localStorage.getItem('token');
+    
+    if (!token) {
+        showLogin();
+        return;
+    }
     
     try {
         const response = await fetch(`${API_URL}/bookings`, {
@@ -538,26 +608,24 @@ async function confirmBooking(vehicleId) {
             closeModal();
             loadVehicles();
         } else {
-            alert(data.message);
+            alert(data.message || 'Failed to confirm booking');
         }
     } catch (error) {
-        alert('Failed to confirm booking. Please try again.');
+        console.error('Booking error:', error);
+        alert('Network error. Failed to confirm booking. Please try again.');
     }
 }
 
-// FIXED: Handle Sell Vehicle with Multiple Images
+// Handle Sell Vehicle with Multiple Images
 async function handleSellVehicle(e) {
     e.preventDefault();
     
-    console.log('🚀 Form submitted!');
-    
     if (!currentUser) {
-        console.log('❌ User not logged in');
         showLogin();
         return;
     }
     
-    const submitBtn = document.getElementById('sellVehicleForm').querySelector('button[type="submit"]');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     const errorDiv = document.getElementById('sellError');
     const successDiv = document.getElementById('sellSuccess');
     
@@ -574,25 +642,19 @@ async function handleSellVehicle(e) {
     const contactPhone = document.getElementById('sellContactPhone').value;
     const imageFiles = document.getElementById('sellImages').files;
     
-    console.log('📋 Form data:', { brand, model, year, price, type, condition, mileage, contactName, contactPhone });
-    console.log('📸 Images:', imageFiles.length);
-    
     // Validation
     if (!brand || !model || !year || !price || !type || !condition || !mileage || !contactName || !contactPhone) {
         showError('sellError', 'Please fill all required fields');
-        console.log('❌ Missing required fields');
         return;
     }
     
     if (imageFiles.length === 0) {
         showError('sellError', 'Please select at least one image');
-        console.log('❌ No images selected');
         return;
     }
     
     if (imageFiles.length > 10) {
         showError('sellError', 'Maximum 10 images allowed');
-        console.log('❌ Too many images');
         return;
     }
     
@@ -612,21 +674,22 @@ async function handleSellVehicle(e) {
     // Append all images
     for (let i = 0; i < imageFiles.length; i++) {
         formData.append('images', imageFiles[i]);
-        console.log(`📎 Added image ${i + 1}:`, imageFiles[i].name);
     }
     
     const token = localStorage.getItem('token');
-    console.log('🔑 Token:', token ? 'Present' : 'Missing');
+    
+    if (!token) {
+        showLogin();
+        return;
+    }
     
     // Disable button and show loading
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-    errorDiv.style.display = 'none';
-    successDiv.style.display = 'none';
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successDiv) successDiv.style.display = 'none';
     
     try {
-        console.log('📤 Sending request to:', `${API_URL}/vehicles`);
-        
         const response = await fetch(`${API_URL}/vehicles`, {
             method: 'POST',
             headers: {
@@ -635,18 +698,17 @@ async function handleSellVehicle(e) {
             body: formData
         });
         
-        console.log('📥 Response status:', response.status);
-        
         const data = await response.json();
-        console.log('📦 Response data:', data);
         
         if (response.ok) {
             showSuccess('sellSuccess', 'Vehicle listed successfully!');
-            console.log('✅ Vehicle listed successfully!');
             
             // Reset form
-            document.getElementById('sellVehicleForm').reset();
-            document.getElementById('imagePreviewContainer').style.display = 'none';
+            e.target.reset();
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+            if (imagePreviewContainer) {
+                imagePreviewContainer.style.display = 'none';
+            }
             selectedImages = [];
             
             // Redirect to home after 2 seconds
@@ -655,11 +717,10 @@ async function handleSellVehicle(e) {
             }, 2000);
         } else {
             showError('sellError', data.message || 'Failed to list vehicle');
-            console.log('❌ Error:', data.message);
         }
     } catch (error) {
-        showError('sellError', 'Network error. Please try again.');
-        console.error('❌ Network error:', error);
+        console.error('Network error:', error);
+        showError('sellError', 'Network error. Please check your connection and try again.');
     } finally {
         // Re-enable button
         submitBtn.disabled = false;
@@ -671,11 +732,11 @@ function handleSearch(e) {
     e.preventDefault();
     
     const filters = {
-        brand: document.getElementById('searchBrand').value,
-        type: document.getElementById('searchType').value,
-        minPrice: document.getElementById('searchMinPrice').value,
-        maxPrice: document.getElementById('searchMaxPrice').value,
-        minYear: document.getElementById('searchMinYear').value
+        brand: document.getElementById('searchBrand')?.value || '',
+        type: document.getElementById('searchType')?.value || '',
+        minPrice: document.getElementById('searchMinPrice')?.value || '',
+        maxPrice: document.getElementById('searchMaxPrice')?.value || '',
+        minYear: document.getElementById('searchMinYear')?.value || ''
     };
     
     // Remove empty filters
@@ -694,6 +755,11 @@ async function loadDashboard() {
     }
     
     const token = localStorage.getItem('token');
+    
+    if (!token) {
+        showLogin();
+        return;
+    }
     
     try {
         // Load user vehicles
@@ -715,137 +781,154 @@ async function loadDashboard() {
         const bookings = await bookingsRes.json();
         
         // Update stats
-        document.getElementById('statVehicles').textContent = vehicles.length;
-        document.getElementById('statBids').textContent = bids.length;
-        document.getElementById('statBookings').textContent = bookings.length;
+        const statVehicles = document.getElementById('statVehicles');
+        const statBids = document.getElementById('statBids');
+        const statBookings = document.getElementById('statBookings');
+        
+        if (statVehicles) statVehicles.textContent = vehicles.length;
+        if (statBids) statBids.textContent = bids.length;
+        if (statBookings) statBookings.textContent = bookings.length;
         
         // Display vehicles
         const vehicleGrid = document.getElementById('dashVehicleGrid');
-        if (vehicles.length === 0) {
-            vehicleGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No vehicles posted yet</p>';
-        } else {
-            vehicleGrid.innerHTML = vehicles.map(vehicle => {
-                const imageUrl = vehicle.images && vehicle.images.length > 0 
-                    ? `${API_URL.replace('/api', '')}${vehicle.images[0]}`
-                    : 'https://via.placeholder.com/400x300?text=No+Image';
-                
-                return `
-                    <div class="vehicle-card">
-                        <div class="vehicle-image-container">
-                            <img src="${imageUrl}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                            <div class="vehicle-badge" style="background: ${vehicle.status === 'available' ? 'var(--secondary)' : 'var(--danger)'}">${vehicle.status}</div>
-                            ${vehicle.images && vehicle.images.length > 1 ? `<div class="vehicle-badge" style="left: 1rem; right: auto; background: rgba(0,0,0,0.7);"><i class="fas fa-images"></i> ${vehicle.images.length}</div>` : ''}
-                        </div>
-                        <div class="vehicle-info">
-                            <h3 class="vehicle-title">${vehicle.brand} ${vehicle.model}</h3>
-                            <div class="vehicle-price">$${vehicle.price.toLocaleString()}</div>
-                            <div class="vehicle-details">
-                                <div class="vehicle-detail">
-                                    <i class="fas fa-calendar"></i>
-                                    <span>${vehicle.year}</span>
-                                </div>
-                                <div class="vehicle-detail">
-                                    <i class="fas fa-car"></i>
-                                    <span>${vehicle.type}</span>
+        if (vehicleGrid) {
+            if (vehicles.length === 0) {
+                vehicleGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No vehicles posted yet</p>';
+            } else {
+                vehicleGrid.innerHTML = vehicles.map(vehicle => {
+                    const imageUrl = vehicle.images && vehicle.images.length > 0 
+                        ? vehicle.images[0]
+                        : 'https://via.placeholder.com/400x300?text=No+Image';
+                    
+                    return `
+                        <div class="vehicle-card">
+                            <div class="vehicle-image-container">
+                                <img src="${imageUrl}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                                <div class="vehicle-badge" style="background: ${vehicle.status === 'available' ? 'var(--secondary)' : 'var(--danger)'}">${vehicle.status}</div>
+                                ${vehicle.images && vehicle.images.length > 1 ? `<div class="vehicle-badge" style="left: 1rem; right: auto; background: rgba(0,0,0,0.7);"><i class="fas fa-images"></i> ${vehicle.images.length}</div>` : ''}
+                            </div>
+                            <div class="vehicle-info">
+                                <h3 class="vehicle-title">${vehicle.brand} ${vehicle.model}</h3>
+                                <div class="vehicle-price">${vehicle.price.toLocaleString()}</div>
+                                <div class="vehicle-details">
+                                    <div class="vehicle-detail">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>${vehicle.year}</span>
+                                    </div>
+                                    <div class="vehicle-detail">
+                                        <i class="fas fa-car"></i>
+                                        <span>${vehicle.type}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
         }
         
         // Display bids
         const bidsGrid = document.getElementById('dashBidsGrid');
-        if (bids.length === 0) {
-            bidsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No bids placed yet</p>';
-        } else {
-            bidsGrid.innerHTML = bids.map(bid => {
-                const imageUrl = bid.vehicleId.images && bid.vehicleId.images.length > 0 
-                    ? `${API_URL.replace('/api', '')}${bid.vehicleId.images[0]}`
-                    : 'https://via.placeholder.com/400x300?text=No+Image';
-                
-                return `
-                    <div class="vehicle-card">
-                        <div class="vehicle-image-container">
-                            <img src="${imageUrl}" alt="${bid.vehicleId.brand} ${bid.vehicleId.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                            <div class="vehicle-badge" style="background: ${bid.status === 'pending' ? 'var(--warning)' : bid.status === 'accepted' ? 'var(--secondary)' : 'var(--danger)'}">${bid.status}</div>
-                        </div>
-                        <div class="vehicle-info">
-                            <h3 class="vehicle-title">${bid.vehicleId.brand} ${bid.vehicleId.model}</h3>
-                            <div class="vehicle-price">Your Bid: ${bid.amount.toLocaleString()}</div>
-                            <div class="vehicle-details">
-                                <div class="vehicle-detail">
-                                    <i class="fas fa-calendar"></i>
-                                    <span>${bid.vehicleId.year}</span>
-                                </div>
-                                <div class="vehicle-detail">
-                                    <i class="fas fa-tag"></i>
-                                    <span>Original: ${bid.vehicleId.price.toLocaleString()}</span>
+        if (bidsGrid) {
+            if (bids.length === 0) {
+                bidsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No bids placed yet</p>';
+            } else {
+                bidsGrid.innerHTML = bids.map(bid => {
+                    const imageUrl = bid.vehicleId.images && bid.vehicleId.images.length > 0 
+                        ? bid.vehicleId.images[0]
+                        : 'https://via.placeholder.com/400x300?text=No+Image';
+                    
+                    return `
+                        <div class="vehicle-card">
+                            <div class="vehicle-image-container">
+                                <img src="${imageUrl}" alt="${bid.vehicleId.brand} ${bid.vehicleId.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                                <div class="vehicle-badge" style="background: ${bid.status === 'pending' ? 'var(--warning)' : bid.status === 'accepted' ? 'var(--secondary)' : 'var(--danger)'}">${bid.status}</div>
+                            </div>
+                            <div class="vehicle-info">
+                                <h3 class="vehicle-title">${bid.vehicleId.brand} ${bid.vehicleId.model}</h3>
+                                <div class="vehicle-price">Your Bid: ${bid.amount.toLocaleString()}</div>
+                                <div class="vehicle-details">
+                                    <div class="vehicle-detail">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>${bid.vehicleId.year}</span>
+                                    </div>
+                                    <div class="vehicle-detail">
+                                        <i class="fas fa-tag"></i>
+                                        <span>Original: ${bid.vehicleId.price.toLocaleString()}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
         }
         
         // Display bookings
         const bookingsGrid = document.getElementById('dashBookingsGrid');
-        if (bookings.length === 0) {
-            bookingsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No bookings yet</p>';
-        } else {
-            bookingsGrid.innerHTML = bookings.map(booking => {
-                const isBuyer = booking.buyerId._id === currentUser.id;
-                const imageUrl = booking.vehicleId.images && booking.vehicleId.images.length > 0 
-                    ? `${API_URL.replace('/api', '')}${booking.vehicleId.images[0]}`
-                    : 'https://via.placeholder.com/400x300?text=No+Image';
-                
-                return `
-                    <div class="vehicle-card">
-                        <div class="vehicle-image-container">
-                            <img src="${imageUrl}" alt="${booking.vehicleId.brand} ${booking.vehicleId.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
-                            <div class="vehicle-badge" style="background: var(--secondary)">Confirmed</div>
-                        </div>
-                        <div class="vehicle-info">
-                            <h3 class="vehicle-title">${booking.vehicleId.brand} ${booking.vehicleId.model}</h3>
-                            <div class="vehicle-price">${booking.finalPrice.toLocaleString()}</div>
-                            <div style="background: var(--light); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                                <p><strong>${isBuyer ? 'Seller' : 'Buyer'}:</strong> ${isBuyer ? booking.sellerId.name : booking.buyerId.name}</p>
-                                <p><strong>Phone:</strong> ${isBuyer ? booking.sellerId.phone : booking.buyerId.phone}</p>
+        if (bookingsGrid) {
+            if (bookings.length === 0) {
+                bookingsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No bookings yet</p>';
+            } else {
+                bookingsGrid.innerHTML = bookings.map(booking => {
+                    const isBuyer = booking.buyerId._id === currentUser.id;
+                    const imageUrl = booking.vehicleId.images && booking.vehicleId.images.length > 0 
+                        ? booking.vehicleId.images[0]
+                        : 'https://via.placeholder.com/400x300?text=No+Image';
+                    
+                    return `
+                        <div class="vehicle-card">
+                            <div class="vehicle-image-container">
+                                <img src="${imageUrl}" alt="${booking.vehicleId.brand} ${booking.vehicleId.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                                <div class="vehicle-badge" style="background: var(--secondary)">Confirmed</div>
+                            </div>
+                            <div class="vehicle-info">
+                                <h3 class="vehicle-title">${booking.vehicleId.brand} ${booking.vehicleId.model}</h3>
+                                <div class="vehicle-price">${booking.finalPrice.toLocaleString()}</div>
+                                <div style="background: var(--light); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                                    <p><strong>${isBuyer ? 'Seller' : 'Buyer'}:</strong> ${isBuyer ? booking.sellerId.name : booking.buyerId.name}</p>
+                                    <p><strong>Phone:</strong> ${isBuyer ? booking.sellerId.phone : booking.buyerId.phone}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
         }
     } catch (error) {
         console.error('Error loading dashboard:', error);
+        alert('Failed to load dashboard. Please try again.');
     }
 }
 
 // Utility Functions
 function showError(elementId, message) {
     const errorEl = document.getElementById(elementId);
-    errorEl.textContent = message;
-    errorEl.style.display = 'block';
-    setTimeout(() => {
-        errorEl.style.display = 'none';
-    }, 5000);
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        setTimeout(() => {
+            errorEl.style.display = 'none';
+        }, 5000);
+    }
 }
 
 function showSuccess(elementId, message) {
     const successEl = document.getElementById(elementId);
-    successEl.textContent = message;
-    successEl.style.display = 'block';
-    setTimeout(() => {
-        successEl.style.display = 'none';
-    }, 5000);
+    if (successEl) {
+        successEl.textContent = message;
+        successEl.style.display = 'block';
+        setTimeout(() => {
+            successEl.style.display = 'none';
+        }, 5000);
+    }
 }
 
 function checkPasswordStrength() {
-    const password = document.getElementById('regPassword').value;
+    const password = document.getElementById('regPassword')?.value || '';
     const strengthBar = document.getElementById('passwordStrengthBar');
+    
+    if (!strengthBar) return;
     
     let strength = 0;
     if (password.length >= 8) strength++;
@@ -864,47 +947,73 @@ function checkPasswordStrength() {
 }
 
 function closeModal() {
-    document.getElementById('vehicleModal').style.display = 'none';
+    const vehicleModal = document.getElementById('vehicleModal');
+    if (vehicleModal) {
+        vehicleModal.style.display = 'none';
+    }
     currentVehicleId = null;
 }
 
 function toggleMenu() {
-    document.getElementById('navLinks').classList.toggle('active');
+    const navLinks = document.getElementById('navLinks');
+    if (navLinks) {
+        navLinks.classList.toggle('active');
+    }
 }
 
 function scrollToVehicles() {
-    document.getElementById('vehiclesSection').scrollIntoView({ behavior: 'smooth' });
+    const vehiclesSection = document.getElementById('vehiclesSection');
+    if (vehiclesSection) {
+        vehiclesSection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
-    event.target.classList.add('active');
-    document.getElementById(`${tab}Tab`).classList.add('active');
+    const clickedBtn = event.target;
+    clickedBtn.classList.add('active');
+    
+    const tabContent = document.getElementById(`${tab}Tab`);
+    if (tabContent) {
+        tabContent.classList.add('active');
+    }
 }
 
 // Navigation Functions
 function hideAllPages() {
-    document.querySelectorAll('#mainContent > div').forEach(page => {
-        page.classList.add('hidden');
-    });
+    const mainContent = document.getElementById('mainContent');
+    if (mainContent) {
+        document.querySelectorAll('#mainContent > div').forEach(page => {
+            page.classList.add('hidden');
+        });
+    }
 }
 
 function showHome() {
     hideAllPages();
-    document.getElementById('homePage').classList.remove('hidden');
+    const homePage = document.getElementById('homePage');
+    if (homePage) {
+        homePage.classList.remove('hidden');
+    }
     loadVehicles();
 }
 
 function showRegister() {
     hideAllPages();
-    document.getElementById('registerPage').classList.remove('hidden');
+    const registerPage = document.getElementById('registerPage');
+    if (registerPage) {
+        registerPage.classList.remove('hidden');
+    }
 }
 
 function showLogin() {
     hideAllPages();
-    document.getElementById('loginPage').classList.remove('hidden');
+    const loginPage = document.getElementById('loginPage');
+    if (loginPage) {
+        loginPage.classList.remove('hidden');
+    }
 }
 
 function showSellVehicle() {
@@ -913,7 +1022,10 @@ function showSellVehicle() {
         return;
     }
     hideAllPages();
-    document.getElementById('sellVehiclePage').classList.remove('hidden');
+    const sellVehiclePage = document.getElementById('sellVehiclePage');
+    if (sellVehiclePage) {
+        sellVehiclePage.classList.remove('hidden');
+    }
 }
 
 function showDashboard() {
@@ -922,24 +1034,33 @@ function showDashboard() {
         return;
     }
     hideAllPages();
-    document.getElementById('dashboardPage').classList.remove('hidden');
+    const dashboardPage = document.getElementById('dashboardPage');
+    if (dashboardPage) {
+        dashboardPage.classList.remove('hidden');
+    }
     loadDashboard();
 }
 
 function showAbout() {
     hideAllPages();
-    document.getElementById('aboutPage').classList.remove('hidden');
+    const aboutPage = document.getElementById('aboutPage');
+    if (aboutPage) {
+        aboutPage.classList.remove('hidden');
+    }
 }
 
 function showContact() {
     hideAllPages();
-    document.getElementById('contactPage').classList.remove('hidden');
+    const contactPage = document.getElementById('contactPage');
+    if (contactPage) {
+        contactPage.classList.remove('hidden');
+    }
 }
 
 // Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('vehicleModal');
-    if (event.target === modal) {
+    if (modal && event.target === modal) {
         closeModal();
     }
 }
