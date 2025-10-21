@@ -1548,3 +1548,140 @@ html {
     background-clip: text;
     animation: shimmer 3s infinite linear;
 }
+
+/* ==========================================
+   SELL VEHICLE FORM - RESPONSIVE FIXES
+   ========================================== */
+
+/* Better container padding on mobile */
+#sellVehiclePage .container {
+    padding: 1rem;
+}
+
+/* Make auth-card responsive */
+#sellVehiclePage .auth-card {
+    padding: 1.5rem;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Responsive form grid */
+#sellVehicleForm > div[style*="grid-template-columns"] {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    /* Single column layout on mobile */
+    #sellVehicleForm > div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+    
+    /* Adjust padding for mobile */
+    #sellVehiclePage .auth-card {
+        padding: 1rem;
+        max-width: 100%;
+        margin: 0;
+    }
+    
+    #sellVehiclePage .container {
+        padding: 0.5rem;
+    }
+    
+    /* Full width form groups */
+    #sellVehicleForm .form-group {
+        grid-column: 1 / -1 !important;
+    }
+    
+    /* Better input sizing */
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 0.75rem;
+    }
+    
+    /* Image upload section */
+    #sellVehicleForm .form-group[style*="grid-column"] {
+        grid-column: 1 / -1 !important;
+    }
+    
+    /* Image preview grid on mobile */
+    #imagePreviews {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem;
+    }
+    
+    /* Button adjustments */
+    #sellVehicleForm button[type="submit"] {
+        font-size: 1rem;
+        padding: 0.875rem;
+    }
+    
+    /* Section title */
+    #sellVehiclePage .section-title {
+        font-size: 1.75rem;
+        padding: 0 0.5rem;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    #sellVehiclePage .auth-card {
+        padding: 0.75rem;
+        border-radius: 10px;
+    }
+    
+    #sellVehiclePage .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Smaller image previews on very small screens */
+    #imagePreviews {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem;
+    }
+    
+    .form-group label {
+        font-size: 0.85rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 0.65rem;
+    }
+}
+
+/* Landscape mode fixes */
+@media (max-width: 768px) and (orientation: landscape) {
+    #sellVehiclePage .container {
+        padding: 0.5rem;
+    }
+    
+    #sellVehiclePage .auth-card {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Prevent horizontal scroll */
+#sellVehiclePage,
+#sellVehiclePage * {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Better textarea on mobile */
+@media (max-width: 768px) {
+    #sellDescription {
+        min-height: 100px;
+        resize: vertical;
+    }
+}
