@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-labelledby="iconTitle">
+  <title id="iconTitle">Car emblem - Blue Theme</title>
+  <style>
+    :root { 
+      --p: #0f172a;  /* dark base */
+      --a: #3b82f6;  /* bright blue */
+      --g: #60a5fa;  /* glass blue */
+    }
+    .ring { fill: var(--a); opacity:.12; }
+    .car { fill: var(--p); }
+    .accent { fill: var(--a); }
+  </style>
+
+  <circle cx="80" cy="80" r="74" class="ring"/>
+  <g transform="translate(0,8)">
+    <path d="M20 92 L140 92 L132 72 L112 56 L88 44 L64 44 L42 56 L24 72 Z" class="car"/>
+    <circle cx="46" cy="96" r="12" class="car"/>
+    <circle cx="114" cy="96" r="12" class="car"/>
+    <path d="M40 74 L80 54 L120 74" class="accent" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+</svg>

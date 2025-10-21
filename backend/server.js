@@ -11,7 +11,11 @@ const crypto = require('crypto');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "https://asraf-codebase.github.io",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
