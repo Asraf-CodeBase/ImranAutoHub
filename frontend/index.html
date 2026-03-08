@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="logo.svg" width="500">
     <title>ImranAutoHub - Buy & Sell Vehicles</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="index.css">
 </head>
@@ -43,12 +43,56 @@
         <div id="homePage">
             <!-- Hero Section -->
             <section class="hero">
+                <div class="hero-media" aria-hidden="true">
+                    <video class="hero-video" autoplay muted loop playsinline preload="metadata">
+                        <source src="assets/landing-hero.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="hero-overlay" aria-hidden="true"></div>
+                <div class="hero-orbs" aria-hidden="true">
+                    <span class="orb orb-1"></span>
+                    <span class="orb orb-2"></span>
+                    <span class="orb orb-3"></span>
+                </div>
                 <div class="hero-content">
+                    <div class="hero-eyebrow">
+                        <span class="live-dot" aria-hidden="true"></span>
+                        Verified listings. Secure deals. Real-time bidding.
+                    </div>
                     <h1>Buy & Sell Vehicles with Confidence</h1>
                     <p>Find your dream vehicle or sell yours at the best price. Join thousands of satisfied customers.</p>
                     <div class="hero-buttons">
                         <button class="btn btn-primary" onclick="scrollToVehicles()">Browse Vehicles</button>
                         <button class="btn btn-secondary" onclick="showSellVehicle()">Sell Your Vehicle</button>
+                    </div>
+                    <div class="hero-highlights">
+                        <div class="hero-highlight">
+                            <div class="highlight-icon">
+                                <i class="fas fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h3>Verified Listings</h3>
+                                <p>Every vehicle is reviewed for quality and authenticity.</p>
+                            </div>
+                        </div>
+                        <div class="hero-highlight">
+                            <div class="highlight-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div>
+                                <h3>Instant Bidding</h3>
+                                <p>Compete live and secure the best price in seconds.</p>
+                            </div>
+                        </div>
+                        <div class="hero-highlight">
+                            <div class="highlight-icon">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <div>
+                                <h3>Secure Payments</h3>
+                                <p>Encrypted transactions for safer, smoother purchases.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -102,44 +146,431 @@
                     </div>
                 </section>
             </div>
+
+            <section class="section section-dark trust-strip reveal" id="trust">
+                <div class="container trust-grid">
+                    <div class="trust-copy">
+                        <span class="eyebrow">Trusted Marketplace</span>
+                        <h2>Built for serious buyers, sellers, and dealerships</h2>
+                        <p>
+                            ImranAutoHub combines verified listings, secure bidding, and live market data so every
+                            transaction feels effortless and professional.
+                        </p>
+                        <div class="trust-metrics">
+                            <div class="metric-card reveal">
+                                <span class="count-up" data-target="12500" data-suffix="+">0</span>
+                                <p>Verified listings</p>
+                            </div>
+                            <div class="metric-card reveal">
+                                <span class="count-up" data-target="98" data-suffix="%">0</span>
+                                <p>Seller satisfaction</p>
+                            </div>
+                            <div class="metric-card reveal">
+                                <span class="count-up" data-target="45" data-suffix=" min">0</span>
+                                <p>Avg. response time</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="trust-marquee">
+                        <div class="marquee">
+                            <div class="marquee-track">
+                                <span><i class="fas fa-building"></i> Metro Motors</span>
+                                <span><i class="fas fa-city"></i> Skyline Auto</span>
+                                <span><i class="fas fa-warehouse"></i> Capital Trucks</span>
+                                <span><i class="fas fa-bolt"></i> EV Prime</span>
+                                <span><i class="fas fa-road"></i> Horizon Rentals</span>
+                                <span><i class="fas fa-flag-checkered"></i> Apex Performance</span>
+                                <span><i class="fas fa-shield-halved"></i> Shield Warranty</span>
+                                <span><i class="fas fa-car"></i> Driftline Motors</span>
+                            </div>
+                            <div class="marquee-track">
+                                <span><i class="fas fa-building"></i> Metro Motors</span>
+                                <span><i class="fas fa-city"></i> Skyline Auto</span>
+                                <span><i class="fas fa-warehouse"></i> Capital Trucks</span>
+                                <span><i class="fas fa-bolt"></i> EV Prime</span>
+                                <span><i class="fas fa-road"></i> Horizon Rentals</span>
+                                <span><i class="fas fa-flag-checkered"></i> Apex Performance</span>
+                                <span><i class="fas fa-shield-halved"></i> Shield Warranty</span>
+                                <span><i class="fas fa-car"></i> Driftline Motors</span>
+                            </div>
+                        </div>
+                        <div class="trust-panel reveal">
+                            <h3>Live Market Pulse</h3>
+                            <p>Track demand, pricing trends, and bidder activity in real time.</p>
+                            <div class="pulse-bars">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section section-soft reveal" id="browseCategories">
+                <div class="container">
+                    <div class="section-header">
+                        <span class="eyebrow">Browse By Style</span>
+                        <h2>Find the perfect vehicle for every lifestyle</h2>
+                        <p>Shop verified inventory across every category with transparent pricing and real-time bids.</p>
+                    </div>
+                    <div class="category-grid">
+                        <button class="category-card reveal" onclick="filterByType('Sedan')">
+                            <div class="category-icon"><i class="fas fa-car-side"></i></div>
+                            <h3>Sedan</h3>
+                            <p>Balanced comfort and efficiency.</p>
+                        </button>
+                        <button class="category-card reveal" onclick="filterByType('SUV')">
+                            <div class="category-icon"><i class="fas fa-car"></i></div>
+                            <h3>SUV</h3>
+                            <p>Roomy, safe, and road-ready.</p>
+                        </button>
+                        <button class="category-card reveal" onclick="filterByType('Truck')">
+                            <div class="category-icon"><i class="fas fa-truck"></i></div>
+                            <h3>Truck</h3>
+                            <p>Heavy duty power for every job.</p>
+                        </button>
+                        <button class="category-card reveal" onclick="filterByType('Coupe')">
+                            <div class="category-icon"><i class="fas fa-bolt"></i></div>
+                            <h3>Coupe</h3>
+                            <p>Sport-inspired performance.</p>
+                        </button>
+                        <button class="category-card reveal" onclick="filterByType('Hatchback')">
+                            <div class="category-icon"><i class="fas fa-road"></i></div>
+                            <h3>Hatchback</h3>
+                            <p>Urban agility and easy parking.</p>
+                        </button>
+                        <button class="category-card reveal" onclick="filterByType('Convertible')">
+                            <div class="category-icon"><i class="fas fa-sun"></i></div>
+                            <h3>Convertible</h3>
+                            <p>Open-air freedom on demand.</p>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section reveal" id="featuredVehicles">
+                <div class="container">
+                    <div class="section-header">
+                        <span class="eyebrow">Featured Auctions</span>
+                        <h2>High-demand listings closing soon</h2>
+                        <p>Stand out with priority placement and secure more qualified buyers.</p>
+                    </div>
+                    <div class="vehicle-grid featured-grid" id="featuredGrid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section reveal" id="recentlyViewed">
+                <div class="container">
+                    <div class="section-header">
+                        <span class="eyebrow">Recently Viewed</span>
+                        <h2>Pick up right where you left off</h2>
+                        <p>Quick access to your latest vehicle views and comparisons.</p>
+                    </div>
+                    <div class="vehicle-grid" id="recentGrid">
+                        <p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No recent views yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section section-dark reveal" id="financeTools">
+                <div class="container">
+                    <div class="section-header align-left">
+                        <span class="eyebrow">Smart Finance</span>
+                        <h2>Get payment clarity before you bid</h2>
+                        <p>Built-in tools to estimate monthly payments, trade-in value, and affordability in seconds.</p>
+                    </div>
+                    <div class="finance-grid">
+                        <div class="finance-card reveal">
+                            <h3>Payment Calculator</h3>
+                            <p class="muted">Instant monthly estimate based on price, rate, and term.</p>
+                            <div class="finance-form">
+                                <div class="form-group">
+                                    <label>Vehicle Price ($)</label>
+                                    <input type="number" id="financePrice" value="35000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Down Payment ($)</label>
+                                    <input type="number" id="financeDown" value="5000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Interest Rate (%)</label>
+                                    <input type="number" id="financeRate" value="6.2" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Term (Months)</label>
+                                    <input type="number" id="financeTerm" value="60">
+                                </div>
+                                <button class="btn btn-primary" type="button" onclick="calculatePayment()">Calculate</button>
+                            </div>
+                            <div class="finance-result">
+                                <span>Estimated monthly</span>
+                                <strong id="financeResult">$0/mo</strong>
+                            </div>
+                        </div>
+                        <div class="finance-card reveal">
+                            <h3>Trade-In Estimator</h3>
+                            <p class="muted">Rough value based on age, mileage, and condition.</p>
+                            <div class="finance-form">
+                                <div class="form-group">
+                                    <label>Original Price ($)</label>
+                                    <input type="number" id="tradePrice" value="28000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Vehicle Age (Years)</label>
+                                    <input type="number" id="tradeAge" value="4">
+                                </div>
+                                <div class="form-group">
+                                    <label>Mileage (miles)</label>
+                                    <input type="number" id="tradeMileage" value="42000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Condition</label>
+                                    <select id="tradeCondition">
+                                        <option value="excellent">Excellent</option>
+                                        <option value="good" selected>Good</option>
+                                        <option value="fair">Fair</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-secondary" type="button" onclick="calculateTradeIn()">Estimate Value</button>
+                            </div>
+                            <div class="finance-result">
+                                <span>Estimated trade-in</span>
+                                <strong id="tradeResult">$0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section reveal" id="process">
+                <div class="container">
+                    <div class="section-header">
+                        <span class="eyebrow">End-to-End Process</span>
+                        <h2>Everything you need to close faster</h2>
+                        <p>From inspections to escrow, every step is handled with clarity and speed.</p>
+                    </div>
+                    <div class="process-grid">
+                        <div class="process-card reveal">
+                            <div class="process-icon"><i class="fas fa-clipboard-check"></i></div>
+                            <h3>Inspection & Verification</h3>
+                            <p>Every listing goes through a multi-point review for condition and history.</p>
+                        </div>
+                        <div class="process-card reveal">
+                            <div class="process-icon"><i class="fas fa-gavel"></i></div>
+                            <h3>Real-Time Bidding</h3>
+                            <p>Live bids, automated alerts, and transparent pricing ensure fair competition.</p>
+                        </div>
+                        <div class="process-card reveal">
+                            <div class="process-icon"><i class="fas fa-lock"></i></div>
+                            <h3>Secure Escrow</h3>
+                            <p>Funds are protected until both buyer and seller confirm delivery.</p>
+                        </div>
+                        <div class="process-card reveal">
+                            <div class="process-icon"><i class="fas fa-truck"></i></div>
+                            <h3>Delivery & Handover</h3>
+                            <p>Schedule pickup or delivery with full documentation support.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section section-soft reveal" id="testimonialsHome">
+                <div class="container">
+                    <div class="section-header">
+                        <span class="eyebrow">Customer Stories</span>
+                        <h2>Professionals trust ImranAutoHub</h2>
+                        <p>Dealers, buyers, and sellers rely on the platform to move inventory faster.</p>
+                    </div>
+                    <div class="testimonial-grid">
+                        <div class="testimonial-card reveal">
+                            <div class="testimonial-header">
+                                <span class="rating">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </span>
+                                <span class="badge-live">Dealer</span>
+                            </div>
+                            <p>"We sold our inventory 2x faster once we moved to ImranAutoHub. The analytics are next level."</p>
+                            <div class="testimonial-author">
+                                <div class="avatar"><i class="fas fa-user-tie"></i></div>
+                                <div>
+                                    <h4>Rakesh Malhotra</h4>
+                                    <span>Capital Motors</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="testimonial-card reveal">
+                            <div class="testimonial-header">
+                                <span class="rating">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </span>
+                                <span class="badge-live">Buyer</span>
+                            </div>
+                            <p>"The bidding process was transparent and fair. I locked my dream SUV with total confidence."</p>
+                            <div class="testimonial-author">
+                                <div class="avatar"><i class="fas fa-user"></i></div>
+                                <div>
+                                    <h4>Neha Sharma</h4>
+                                    <span>Premium Buyer</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="testimonial-card reveal">
+                            <div class="testimonial-header">
+                                <span class="rating">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </span>
+                                <span class="badge-live">Seller</span>
+                            </div>
+                            <p>"From listing to payment, the platform felt premium and secure. The support team is excellent."</p>
+                            <div class="testimonial-author">
+                                <div class="avatar"><i class="fas fa-user-shield"></i></div>
+                                <div>
+                                    <h4>Imran Qureshi</h4>
+                                    <span>Independent Seller</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section reveal" id="faq">
+                <div class="container">
+                    <div class="section-header">
+                        <span class="eyebrow">Support Center</span>
+                        <h2>Frequently asked questions</h2>
+                        <p>Everything you need to know to buy, sell, and bid confidently.</p>
+                    </div>
+                    <div class="faq-grid">
+                        <div class="faq-item">
+                            <button class="faq-question">
+                                How are vehicles verified on ImranAutoHub?
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="faq-answer">
+                                <p>Our inspection partners review photos, history reports, and seller details before a listing goes live.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question">
+                                Can I schedule a test drive?
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="faq-answer">
+                                <p>Yes. Once you engage with a listing, you can request a test drive or inspection directly from the seller.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question">
+                                How does bidding work?
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="faq-answer">
+                                <p>Live bids update instantly. Sellers can accept the highest bid or continue the auction until close.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question">
+                                What payment methods are supported?
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="faq-answer">
+                                <p>We support bank transfer, escrow, and partner financing options for qualified buyers.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section section-dark cta-section reveal" id="cta">
+                <div class="container cta-grid">
+                    <div class="cta-content">
+                        <span class="eyebrow">Ready To Move Faster?</span>
+                        <h2>Launch your next vehicle deal today</h2>
+                        <p>Join a marketplace built for speed, trust, and premium experiences across every listing.</p>
+                        <div class="cta-actions">
+                            <button class="btn btn-primary" onclick="showRegister()">Create Free Account</button>
+                            <button class="btn btn-secondary" onclick="showSellVehicle()">List a Vehicle</button>
+                        </div>
+                    </div>
+                    <div class="cta-card">
+                        <h3>Marketplace Highlights</h3>
+                        <ul>
+                            <li><i class="fas fa-check-circle"></i> Verified sellers and inventory</li>
+                            <li><i class="fas fa-check-circle"></i> Secure escrow protection</li>
+                            <li><i class="fas fa-check-circle"></i> Dedicated concierge support</li>
+                            <li><i class="fas fa-check-circle"></i> Instant alerts and bidding</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <!-- Registration Page -->
         <div id="registerPage" class="hidden">
             <div class="auth-container">
-                <div class="auth-card">
-                    <h2>Create Account</h2>
-                    <p>Join AutoHub and start buying or selling vehicles today</p>
-                    <div class="error-message" id="registerError"></div>
-                    <div class="success-message" id="registerSuccess"></div>
-                    <form id="registerForm" class="auth-form">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="regName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" id="regEmail" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="regPhone" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" id="regPassword" required>
-                            <div class="password-strength">
-                                <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                <div class="auth-layout">
+                    <div class="auth-card">
+                        <h2>Create Account</h2>
+                        <p>Join AutoHub and start buying or selling vehicles today</p>
+                        <div class="error-message" id="registerError"></div>
+                        <div class="success-message" id="registerSuccess"></div>
+                        <form id="registerForm" class="auth-form">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="regName" required>
                             </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" id="regEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" id="regPhone" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="regPassword" required>
+                                <div class="password-strength">
+                                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm Password</label>
+                                <input type="password" id="regConfirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+                        </form>
+                        <div class="auth-link">
+                            Already have an account? <a href="#" onclick="showLogin()">Login here</a>
                         </div>
-                        <div class="form-group">
-                            <label>Confirm Password</label>
-                            <input type="password" id="regConfirmPassword" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
-                    </form>
-                    <div class="auth-link">
-                        Already have an account? <a href="#" onclick="showLogin()">Login here</a>
+                    </div>
+                    <div class="auth-aside">
+                        <h3>Why create an account?</h3>
+                        <p>Access verified inventory, save listings, and bid instantly with full transaction protection.</p>
+                        <ul>
+                            <li><i class="fas fa-check-circle"></i> Instant bidding access</li>
+                            <li><i class="fas fa-check-circle"></i> Save and compare vehicles</li>
+                            <li><i class="fas fa-check-circle"></i> Priority seller support</li>
+                            <li><i class="fas fa-check-circle"></i> Secure escrow payments</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -148,28 +579,40 @@
         <!-- Login Page -->
         <div id="loginPage" class="hidden">
             <div class="auth-container">
-                <div class="auth-card">
-                    <h2>Welcome Back</h2>
-                    <p>Login to access your account</p>
-                    <div class="error-message" id="loginError"></div>
-                    <form id="loginForm" class="auth-form">
-                        <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" id="loginEmail" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" id="loginPassword" required>
-                            <div style="text-align: right; margin-top: 0.5rem;">
-                                <a href="pages/forgot-password.html" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
-                                    Forgot Password?
-                                </a>
+                <div class="auth-layout">
+                    <div class="auth-card">
+                        <h2>Welcome Back</h2>
+                        <p>Login to access your account</p>
+                        <div class="error-message" id="loginError"></div>
+                        <form id="loginForm" class="auth-form">
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" id="loginEmail" required>
                             </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="loginPassword" required>
+                                <div style="text-align: right; margin-top: 0.5rem;">
+                                    <a href="pages/forgot-password.html" style="color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+                                        Forgot Password?
+                                    </a>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                        </form>
+                        <div class="auth-link">
+                            Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
                         </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
-                    </form>
-                    <div class="auth-link">
-                        Don't have an account? <a href="#" onclick="showRegister()">Register here</a>
+                    </div>
+                    <div class="auth-aside">
+                        <h3>Marketplace insights</h3>
+                        <p>Get real-time notifications, pricing alerts, and curated recommendations.</p>
+                        <ul>
+                            <li><i class="fas fa-check-circle"></i> Live bidding updates</li>
+                            <li><i class="fas fa-check-circle"></i> Personalized watchlists</li>
+                            <li><i class="fas fa-check-circle"></i> New listing alerts</li>
+                            <li><i class="fas fa-check-circle"></i> Dedicated account manager</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -180,11 +623,13 @@
         <div id="sellVehiclePage" class="hidden">
             <div class="container">
                 <h2 class="section-title">Sell Your Vehicle</h2>
-                <div class="auth-card" style="max-width: 900px; margin: 0 auto;">
-                    <div class="error-message" id="sellError"></div>
-                    <div class="success-message" id="sellSuccess"></div>
-                    <form id="sellVehicleForm" class="auth-form">
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                <div class="sell-layout">
+                    <div class="sell-form">
+                        <div class="auth-card">
+                            <div class="error-message" id="sellError"></div>
+                            <div class="success-message" id="sellSuccess"></div>
+                            <form id="sellVehicleForm" class="auth-form">
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                             <div class="form-group">
                                 <label>Brand</label>
                                 <input type="text" id="sellBrand" required>
@@ -195,7 +640,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Year</label>
-                                <input type="number" id="sellYear" required min="1900" max="2025">
+                                <input type="number" id="sellYear" required min="1900" max="2026">
                             </div>
                             <div class="form-group">
                                 <label>Price ($)</label>
@@ -256,7 +701,7 @@
 
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label>Description</label>
-                                <textarea id="sellDescription" rows="4" style="padding: 0.8rem; border: 2px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+                                <textarea id="sellDescription" rows="4" style="padding: 0.8rem; border: 2px solid var(--border); border-radius: 8px; font-family: var(--body-font); resize: vertical;"></textarea>
                             </div>
                             <div class="form-group">
                                 <label>Contact Name</label>
@@ -267,10 +712,41 @@
                                 <input type="tel" id="sellContactPhone" required>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                            <i class="fas fa-upload"></i> List Vehicle
-                        </button>
-                    </form>
+                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                                    <i class="fas fa-upload"></i> List Vehicle
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <aside class="sell-aside">
+                        <div class="sell-card reveal">
+                            <h3>Seller Success Checklist</h3>
+                            <ul>
+                                <li><i class="fas fa-check-circle"></i> Upload 6+ high-quality images</li>
+                                <li><i class="fas fa-check-circle"></i> Include full service history</li>
+                                <li><i class="fas fa-check-circle"></i> Set a competitive reserve price</li>
+                                <li><i class="fas fa-check-circle"></i> Respond to bids within 1 hour</li>
+                            </ul>
+                        </div>
+                        <div class="sell-card highlight reveal">
+                            <h3>Live Pricing Guidance</h3>
+                            <p>Enter your expected price to see demand strength.</p>
+                            <div class="form-group">
+                                <label>Expected Price ($)</label>
+                                <input type="number" id="priceSignal" value="25000">
+                            </div>
+                            <div class="price-signal" id="priceSignalResult">Strong demand</div>
+                            <button class="btn btn-secondary" type="button" onclick="updatePriceSignal()">Update Signal</button>
+                        </div>
+                        <div class="sell-card reveal">
+                            <h3>Seller Protection</h3>
+                            <p>Every transaction includes escrow protection, verified buyers, and dedicated support.</p>
+                            <div class="support-contacts">
+                                <div><i class="fas fa-phone"></i> +91 70087 03206</div>
+                                <div><i class="fas fa-envelope"></i> seller@imranautohub.com</div>
+                            </div>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </div>
@@ -389,6 +865,49 @@
                         <div class="spinner"></div>
                     </div>
                 </div>
+
+                <div class="dashboard-extras">
+                    <div class="dashboard-insights">
+                        <div class="insight-card reveal">
+                            <h3>Saved Searches</h3>
+                            <p class="muted">Get alerts when new vehicles match your criteria.</p>
+                            <button class="btn btn-secondary" type="button" onclick="saveSearchAlert()">Create Alert</button>
+                        </div>
+                        <div class="insight-card reveal">
+                            <h3>Favorite Vehicles</h3>
+                            <p class="muted">Keep track of your top listings and compare instantly.</p>
+                            <div class="vehicle-grid compact-grid" id="favoritesGrid">
+                                <p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No favorites yet</p>
+                            </div>
+                        </div>
+                        <div class="insight-card reveal">
+                            <h3>Activity Timeline</h3>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <span class="dot"></span>
+                                    <div>
+                                        <strong>Bid activity accelerated</strong>
+                                        <p class="muted">Your last bid placed 2 hours ago.</p>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="dot"></span>
+                                    <div>
+                                        <strong>New listing alert</strong>
+                                        <p class="muted">3 SUVs matched your saved search.</p>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="dot"></span>
+                                    <div>
+                                        <strong>Inspection update</strong>
+                                        <p class="muted">A seller shared fresh inspection photos.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -396,13 +915,13 @@
         <div id="aboutPage" class="hidden">
             <div class="container">
                 <!-- Hero Section -->
-                <div class="about-hero">
+                <div class="about-hero reveal">
                     <h2 class="section-title" style="margin-bottom: 1rem;">About ImranAutoHub</h2>
                     <p class="about-subtitle">Revolutionizing the way you buy and sell vehicles</p>
                 </div>
             
                 <!-- Mission & Vision Section -->
-                <div class="about-section">
+                <div class="about-section reveal">
                     <div class="about-grid-2">
                         <div class="about-card mission-card">
                             <div class="about-icon">
@@ -425,10 +944,10 @@
                 </div>
             
                 <!-- Why Choose Us Section -->
-                <div class="about-section">
+                <div class="about-section reveal">
                     <h3 class="section-subtitle">Why Choose ImranAutoHub?</h3>
                     <div class="features-grid">
-                        <div class="feature-card">
+                        <div class="feature-card reveal">
                             <div class="feature-icon blue">
                                 <i class="fas fa-shield-alt"></i>
                             </div>
@@ -436,7 +955,7 @@
                             <p>Every transaction is protected with bank-level security. Your data is encrypted, and our verification process ensures only genuine buyers and sellers.</p>
                         </div>
                     
-                        <div class="feature-card">
+                        <div class="feature-card reveal">
                             <div class="feature-icon green">
                                 <i class="fas fa-gavel"></i>
                             </div>
@@ -444,7 +963,7 @@
                             <p>Experience competitive pricing with our live bidding system. Get instant notifications and compete fairly for your dream vehicle.</p>
                         </div>
                     
-                        <div class="feature-card">
+                        <div class="feature-card reveal">
                             <div class="feature-icon purple">
                                 <i class="fas fa-certificate"></i>
                             </div>
@@ -452,7 +971,7 @@
                             <p>Every vehicle listing goes through our verification process. We ensure accurate information, genuine photos, and honest descriptions.</p>
                         </div>
                     
-                        <div class="feature-card">
+                        <div class="feature-card reveal">
                             <div class="feature-icon orange">
                                 <i class="fas fa-dollar-sign"></i>
                             </div>
@@ -460,7 +979,7 @@
                             <p>Our competitive bidding system ensures you always get the best deal. No hidden fees, no surprises - just transparent pricing.</p>
                         </div>
                     
-                        <div class="feature-card">
+                        <div class="feature-card reveal">
                             <div class="feature-icon red">
                                 <i class="fas fa-headset"></i>
                             </div>
@@ -468,7 +987,7 @@
                             <p>Our dedicated support team is always here to help. Whether it's a question or concern, we're just a message away.</p>
                         </div>
                     
-                        <div class="feature-card">
+                        <div class="feature-card reveal">
                             <div class="feature-icon teal">
                                 <i class="fas fa-bolt"></i>
                             </div>
@@ -479,10 +998,10 @@
                 </div>
             
                 <!-- How It Works Section -->
-                <div class="about-section how-it-works-section">
+                <div class="about-section reveal how-it-works-section">
                     <h3 class="section-subtitle">How It Works</h3>
                     <div class="timeline">
-                        <div class="timeline-item">
+                        <div class="timeline-item reveal">
                             <div class="timeline-marker">1</div>
                             <div class="timeline-content">
                                 <h4><i class="fas fa-user-plus"></i> Create Your Account</h4>
@@ -490,7 +1009,7 @@
                             </div>
                         </div>
                     
-                        <div class="timeline-item">
+                        <div class="timeline-item reveal">
                             <div class="timeline-marker">2</div>
                             <div class="timeline-content">
                                 <h4><i class="fas fa-search"></i> Browse or List Vehicles</h4>
@@ -498,7 +1017,7 @@
                             </div>
                         </div>
                     
-                        <div class="timeline-item">
+                        <div class="timeline-item reveal">
                             <div class="timeline-marker">3</div>
                             <div class="timeline-content">
                                 <h4><i class="fas fa-gavel"></i> Place Your Bid</h4>
@@ -506,7 +1025,7 @@
                             </div>
                         </div>
                     
-                        <div class="timeline-item">
+                        <div class="timeline-item reveal">
                             <div class="timeline-marker">4</div>
                             <div class="timeline-content">
                                 <h4><i class="fas fa-handshake"></i> Close the Deal</h4>
@@ -517,7 +1036,7 @@
                 </div>
             
                 <!-- Statistics Section -->
-                <div class="about-section stats-section">
+                <div class="about-section reveal stats-section">
                     <h3 class="section-subtitle">Our Impact in Numbers</h3>
                     <div class="stats-grid-about">
                         <div class="stat-item">
@@ -555,28 +1074,28 @@
                 </div>
             
                 <!-- Values Section -->
-                <div class="about-section">
+                <div class="about-section reveal">
                     <h3 class="section-subtitle">Our Core Values</h3>
                     <div class="values-grid">
-                        <div class="value-card">
+                        <div class="value-card reveal">
                             <div class="value-number">01</div>
                             <h4>Transparency</h4>
                             <p>We believe in complete honesty. No hidden fees, no misleading information - just straightforward, transparent dealings.</p>
                         </div>
                     
-                        <div class="value-card">
+                        <div class="value-card reveal">
                             <div class="value-number">02</div>
                             <h4>Innovation</h4>
                             <p>We constantly evolve with cutting-edge technology to make your experience smoother, faster, and more enjoyable.</p>
                         </div>
                     
-                        <div class="value-card">
+                        <div class="value-card reveal">
                             <div class="value-number">03</div>
                             <h4>Trust</h4>
                             <p>Building lasting relationships through reliability, security, and exceptional service is at the heart of everything we do.</p>
                         </div>
                     
-                        <div class="value-card">
+                        <div class="value-card reveal">
                             <div class="value-number">04</div>
                             <h4>Community</h4>
                             <p>We're more than a marketplace - we're a community of automotive enthusiasts helping each other find perfect matches.</p>
@@ -585,10 +1104,10 @@
                 </div>
             
                 <!-- Testimonials Section -->
-                <div class="about-section testimonials-section">
+                <div class="about-section reveal testimonials-section">
                     <h3 class="section-subtitle">What Our Customers Say</h3>
                     <div class="testimonials-grid">
-                        <div class="testimonial-card">
+                        <div class="testimonial-card reveal">
                             <div class="testimonial-rating">
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
@@ -608,7 +1127,7 @@
                             </div>
                         </div>
                     
-                        <div class="testimonial-card">
+                        <div class="testimonial-card reveal">
                             <div class="testimonial-rating">
                                 <i class="fas fa-star"></i>
                                 <i class="fas fa-star"></i>
@@ -631,13 +1150,13 @@
                 </div>
             
                 <!-- Team Section -->
-                <div class="about-section">
+                <div class="about-section reveal">
                     <h3 class="section-subtitle">Meet Our Team</h3>
                     <p style="text-align: center; max-width: 800px; margin: 0 auto 3rem; color: var(--text-light); font-size: 1.1rem;">
                         Passionate professionals dedicated to making your vehicle buying and selling experience exceptional.
                     </p>
                     <div class="team-grid">
-                        <div class="team-card">
+                        <div class="team-card reveal">
                             <div class="team-image">
                                 <i class="fas fa-user-tie"></i>
                             </div>
@@ -674,42 +1193,83 @@
         <div id="contactPage" class="hidden">
             <div class="container">
                 <h2 class="section-title">Contact Us</h2>
-                <div class="auth-card" style="max-width: 600px; margin: 0 auto;">
-                    <div style="text-align: center; margin-bottom: 2rem;">
-                        <div style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <h3>Get In Touch</h3>
-                        <p style="color: var(--text-light);">We'd love to hear from you</p>
+                <div class="contact-layout">
+                    <div class="contact-form-card reveal">
+                        <h3>Send a message</h3>
+                        <p class="muted">Our concierge team will respond within 1 business hour.</p>
+                        <form class="auth-form" id="contactForm">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="contactName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" id="contactEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" id="contactPhone">
+                            </div>
+                            <div class="form-group">
+                                <label>Reason</label>
+                                <select id="contactReason">
+                                    <option value="buying">Buying Support</option>
+                                    <option value="selling">Selling Support</option>
+                                    <option value="finance">Financing</option>
+                                    <option value="technical">Technical Help</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Message</label>
+                                <textarea id="contactMessage" rows="4"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send Message</button>
+                        </form>
                     </div>
-                    <div style="display: grid; gap: 1.5rem;">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="width: 50px; height: 50px; background: rgba(37,99,235,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
-                                <i class="fas fa-phone"></i>
-                            </div>
+                    <div class="contact-info-card reveal">
+                        <div class="contact-info-block">
+                            <div class="icon-circle"><i class="fas fa-phone"></i></div>
                             <div>
-                                <p style="font-weight: 600;">Phone</p>
-                                <p style="color: var(--text-light);">+91 70087 03206</p>
+                                <p class="label">Phone</p>
+                                <p>+91 70087 03206</p>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="width: 50px; height: 50px; background: rgba(37,99,235,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
-                                <i class="fas fa-envelope"></i>
-                            </div>
+                        <div class="contact-info-block">
+                            <div class="icon-circle"><i class="fas fa-envelope"></i></div>
                             <div>
-                                <p style="font-weight: 600;">Email</p>
-                                <p style="color: var(--text-light);">support@imranautohub.com</p>
+                                <p class="label">Email</p>
+                                <p>support@imranautohub.com</p>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div style="width: 50px; height: 50px; background: rgba(37,99,235,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
+                        <div class="contact-info-block">
+                            <div class="icon-circle"><i class="fas fa-map-marker-alt"></i></div>
                             <div>
-                                <p style="font-weight: 600;">Address</p>
-                                <p style="color: var(--text-light);">Upper Basti Near Dam Milatnagar, Barbil</p>
+                                <p class="label">Address</p>
+                                <p>Upper Basti Near Dam Milatnagar, Barbil</p>
                             </div>
                         </div>
+                        <div class="contact-hours">
+                            <h4>Support Hours</h4>
+                            <p>Mon - Sat: 8:00 AM - 10:00 PM</p>
+                            <p>Sunday: 10:00 AM - 6:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-support-grid">
+                    <div class="support-card reveal">
+                        <h3><i class="fas fa-comment-dots"></i> Live Chat</h3>
+                        <p>Connect instantly with our concierge team for real-time assistance.</p>
+                        <button class="btn btn-secondary" type="button" onclick="showToast('Live chat is connecting...')">Start Chat</button>
+                    </div>
+                    <div class="support-card reveal">
+                        <h3><i class="fas fa-gavel"></i> Dispute Support</h3>
+                        <p>Dedicated dispute resolution for safe, transparent transactions.</p>
+                        <button class="btn btn-secondary" type="button" onclick="showToast('Dispute support ticket created.')">Open Ticket</button>
+                    </div>
+                    <div class="support-card reveal">
+                        <h3><i class="fas fa-star"></i> Concierge Sales</h3>
+                        <p>Let our team source the exact vehicle you are searching for.</p>
+                        <button class="btn btn-secondary" type="button" onclick="showToast('Concierge request submitted.')">Request Concierge</button>
                     </div>
                 </div>
             </div>
@@ -725,6 +1285,41 @@
             </div>
             <div class="modal-body" id="modalBody">
                 <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Drawer -->
+    <div id="compareDrawer" class="compare-drawer">
+        <div class="compare-header">
+            <h3>Compare Vehicles</h3>
+            <button class="btn btn-secondary" type="button" onclick="toggleCompareDrawer()">Close</button>
+        </div>
+        <div class="compare-items" id="compareItems">
+            <p style="color: rgba(226,232,240,0.8);">No vehicles selected yet.</p>
+        </div>
+        <div class="compare-footer">
+            <button class="btn btn-primary" type="button" onclick="openCompareModal()">Compare Now</button>
+            <button class="btn btn-secondary" type="button" onclick="clearCompare()">Clear List</button>
+        </div>
+    </div>
+
+    <button class="compare-fab" id="compareFab" type="button" onclick="toggleCompareDrawer()">
+        <i class="fas fa-scale-balanced"></i>
+        Compare
+        <span class="compare-count" id="compareCount">0</span>
+    </button>
+
+    <div class="toast" id="toast"></div>
+
+    <div id="compareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Vehicle Comparison</h2>
+                <button class="modal-close" onclick="closeCompareModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="compareModalBody">
+                <!-- Comparison table injected here -->
             </div>
         </div>
     </div>
@@ -749,7 +1344,7 @@
                 <h3>Contact Info</h3>
                 <ul class="footer-links">
                     <li><i class="fas fa-phone"></i> +91 70087 03206</li>
-                    <li><i class="fas fa-envelope"></i> support@autohub.com</li>
+                    <li><i class="fas fa-envelope"></i> support@imranautohub.com</li>
                     <li><i class="fas fa-map-marker-alt"></i> Upper Basti Near Dam Milatnagar, Barbil</li>
                 </ul>
             </div>
@@ -764,7 +1359,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2025 AutoHub. All rights reserved.</p>
+            <p>&copy; 2026 ImranAutoHub. All rights reserved.</p>
         </div>
     </footer>
 

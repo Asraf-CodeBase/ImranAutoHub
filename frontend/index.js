@@ -4,6 +4,13 @@ const API_URL = window.APP_CONFIG?.API_URL || 'https://imran-auto-hub-backend.ve
 let currentUser = null;
 let currentVehicleId = null;
 let selectedImages = [];
+let cachedVehicles = [];
+
+const STORAGE_KEYS = {
+    favorites: 'favorites',
+    compare: 'compareList',
+    recent: 'recentlyViewed'
+};
 
 console.log('🔍 API URL:', API_URL);
 console.log('🔍 Config object:', window.APP_CONFIG);
@@ -13,6 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     loadVehicles();
     initializeEventListeners();
+    initScrollReveal();
+    initFAQ();
+    initFinanceTools();
+    initCompareUI();
+    renderCompareDrawer();
+    updateFavoriteButtons();
 });
 
 // Event Listeners
@@ -64,6 +77,16 @@ function initializeEventListeners() {
             }
         }
     });
+
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', handleContactSubmit);
+    }
+
+    const priceSignal = document.getElementById('priceSignal');
+    if (priceSignal) {
+        priceSignal.addEventListener('input', updatePriceSignal);
+    }
 }
 
 // Handle Multiple Image Selection
@@ -292,7 +315,14 @@ async function loadVehicles(filters = {}) {
         }
         
         const vehicles = await response.json();
+        const isFiltered = Object.keys(filters).length > 0;
+        if (!isFiltered || cachedVehicles.length === 0) {
+            cachedVehicles = vehicles;
+        }
         displayVehicles(vehicles);
+        displayFeaturedVehicles(vehicles);
+        renderFavorites();
+        renderRecentViews();
     } catch (error) {
         console.error('Error loading vehicles:', error);
         const grid = document.getElementById('vehicleGrid');
@@ -316,10 +346,29 @@ function displayVehicles(vehicles) {
         const imageUrl = vehicle.images && vehicle.images.length > 0 
             ? vehicle.images[0]
             : 'https://via.placeholder.com/400x300?text=No+Image';
+        const favoriteActive = isFavorited(vehicle._id);
+        const compareActive = isInCompare(vehicle._id);
         
         return `
             <div class="vehicle-card" onclick="showVehicleDetails('${vehicle._id}')">
                 <div class="vehicle-image-container">
+                    <div class="vehicle-quick-actions">
+                        <button class="quick-btn favorite-btn ${favoriteActive ? 'active' : ''}" data-id="${vehicle._id}" onclick="event.stopPropagation(); toggleFavoriteFromCard(this)">
+                            <i class="${favoriteActive ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                        </button>
+                        <button class="quick-btn compare-btn ${compareActive ? 'active' : ''}"
+                            data-id="${vehicle._id}"
+                            data-title="${vehicle.brand} ${vehicle.model}"
+                            data-image="${imageUrl}"
+                            data-price="${vehicle.price}"
+                            data-year="${vehicle.year}"
+                            data-mileage="${vehicle.mileage}"
+                            data-type="${vehicle.type}"
+                            data-condition="${vehicle.condition}"
+                            onclick="event.stopPropagation(); toggleCompareFromCard(this)">
+                            <i class="fas fa-scale-balanced"></i>
+                        </button>
+                    </div>
                     <img src="${imageUrl}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
                     <div class="vehicle-badge">${vehicle.condition}</div>
                     ${vehicle.images && vehicle.images.length > 1 ? `<div class="vehicle-badge" style="left: 1rem; right: auto; background: rgba(0,0,0,0.7);"><i class="fas fa-images"></i> ${vehicle.images.length}</div>` : ''}
@@ -368,6 +417,7 @@ async function showVehicleDetails(vehicleId) {
         }
         
         const vehicle = await response.json();
+        trackRecentlyViewed(vehicle);
         
         const isSeller = currentUser && vehicle.sellerId._id === currentUser.id;
         
@@ -750,6 +800,79 @@ function handleSearch(e) {
     loadVehicles(filters);
 }
 
+function filterByType(type) {
+    const typeSelect = document.getElementById('searchType');
+    if (typeSelect) {
+        typeSelect.value = type;
+    }
+    handleSearch({ preventDefault: () => {} });
+    scrollToVehicles();
+}
+
+function calculatePayment() {
+    const price = parseFloat(document.getElementById('financePrice')?.value || 0);
+    const down = parseFloat(document.getElementById('financeDown')?.value || 0);
+    const rate = parseFloat(document.getElementById('financeRate')?.value || 0) / 100 / 12;
+    const term = parseFloat(document.getElementById('financeTerm')?.value || 0);
+    const principal = Math.max(price - down, 0);
+    let payment = 0;
+
+    if (rate > 0 && term > 0) {
+        payment = (principal * rate) / (1 - Math.pow(1 + rate, -term));
+    } else if (term > 0) {
+        payment = principal / term;
+    }
+    if (!isFinite(payment)) {
+        payment = 0;
+    }
+
+    const result = document.getElementById('financeResult');
+    if (result) {
+        result.textContent = `$${Math.round(payment).toLocaleString()}/mo`;
+    }
+}
+
+function calculateTradeIn() {
+    const price = parseFloat(document.getElementById('tradePrice')?.value || 0);
+    const age = parseFloat(document.getElementById('tradeAge')?.value || 0);
+    const mileage = parseFloat(document.getElementById('tradeMileage')?.value || 0);
+    const condition = document.getElementById('tradeCondition')?.value || 'good';
+
+    const ageFactor = Math.max(0.55, 1 - age * 0.08);
+    const mileageFactor = Math.max(0.6, 1 - mileage / 200000);
+    const conditionFactor = condition === 'excellent' ? 1 : condition === 'fair' ? 0.8 : 0.9;
+
+    const estimate = Math.max(0, price * ageFactor * mileageFactor * conditionFactor);
+    const result = document.getElementById('tradeResult');
+    if (result) {
+        result.textContent = `$${Math.round(estimate).toLocaleString()}`;
+    }
+}
+
+function updatePriceSignal() {
+    let value = parseFloat(document.getElementById('priceSignal')?.value || 0);
+    const target = document.getElementById('priceSignalResult');
+    if (!target) return;
+
+    if (!isFinite(value)) {
+        value = 0;
+    }
+
+    if (value <= 20000) {
+        target.textContent = 'Very strong demand';
+        target.style.background = 'rgba(16, 185, 129, 0.2)';
+        target.style.color = '#0f766e';
+    } else if (value <= 35000) {
+        target.textContent = 'Strong demand';
+        target.style.background = 'rgba(59, 130, 246, 0.2)';
+        target.style.color = '#1d4ed8';
+    } else {
+        target.textContent = 'Moderate demand';
+        target.style.background = 'rgba(245, 158, 11, 0.2)';
+        target.style.color = '#b45309';
+    }
+}
+
 // Dashboard
 async function loadDashboard() {
     if (!currentUser) {
@@ -904,6 +1027,103 @@ async function loadDashboard() {
     }
 }
 
+// UI Enhancements
+function initScrollReveal() {
+    const items = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+        items.forEach(item => item.classList.add('in-view'));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+
+    items.forEach(item => observer.observe(item));
+
+    const counters = document.querySelectorAll('.count-up');
+    const counterObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.4 });
+
+    counters.forEach(counter => counterObserver.observe(counter));
+}
+
+function animateCounter(element) {
+    const target = parseFloat(element.dataset.target || '0');
+    const suffix = element.dataset.suffix || '';
+    const duration = 1200;
+    const start = performance.now();
+
+    function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const value = Math.round(target * progress);
+        element.textContent = `${value.toLocaleString()}${suffix}`;
+        if (progress < 1) {
+            requestAnimationFrame(tick);
+        }
+    }
+
+    requestAnimationFrame(tick);
+}
+
+function initFAQ() {
+    document.querySelectorAll('.faq-item').forEach(item => {
+        const button = item.querySelector('.faq-question');
+        if (!button) return;
+        button.addEventListener('click', () => {
+            item.classList.toggle('open');
+        });
+    });
+}
+
+function initFinanceTools() {
+    const financeInputs = ['financePrice', 'financeDown', 'financeRate', 'financeTerm'];
+    financeInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', calculatePayment);
+        }
+    });
+    const tradeInputs = ['tradePrice', 'tradeAge', 'tradeMileage', 'tradeCondition'];
+    tradeInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', calculateTradeIn);
+        }
+    });
+    calculatePayment();
+    calculateTradeIn();
+    updatePriceSignal();
+}
+
+function initCompareUI() {
+    const compareFab = document.getElementById('compareFab');
+    if (compareFab) {
+        compareFab.addEventListener('click', toggleCompareDrawer);
+    }
+}
+
+function handleContactSubmit(e) {
+    e.preventDefault();
+    showToast('Message sent. Our team will reach out shortly.');
+    e.target.reset();
+}
+
+function saveSearchAlert() {
+    showToast('Search alert saved. You will receive new listing notifications.');
+}
+
 // Utility Functions
 function showError(elementId, message) {
     const errorEl = document.getElementById(elementId);
@@ -925,6 +1145,352 @@ function showSuccess(elementId, message) {
             successEl.style.display = 'none';
         }, 5000);
     }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function getStoredArray(key) {
+    try {
+        return JSON.parse(localStorage.getItem(key)) || [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function setStoredArray(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function isFavorited(vehicleId) {
+    return getStoredArray(STORAGE_KEYS.favorites).includes(vehicleId);
+}
+
+function toggleFavorite(vehicleId) {
+    const favorites = getStoredArray(STORAGE_KEYS.favorites);
+    const index = favorites.indexOf(vehicleId);
+    if (index >= 0) {
+        favorites.splice(index, 1);
+        showToast('Removed from favorites.');
+    } else {
+        favorites.push(vehicleId);
+        showToast('Added to favorites.');
+    }
+    setStoredArray(STORAGE_KEYS.favorites, favorites);
+    updateFavoriteButtons();
+    renderFavorites();
+}
+
+function toggleFavoriteFromCard(button) {
+    const vehicleId = button.dataset.id;
+    if (!vehicleId) return;
+    toggleFavorite(vehicleId);
+}
+
+function updateFavoriteButtons() {
+    document.querySelectorAll('.favorite-btn').forEach(button => {
+        const vehicleId = button.dataset.id;
+        const active = vehicleId && isFavorited(vehicleId);
+        button.classList.toggle('active', active);
+        const icon = button.querySelector('i');
+        if (icon) {
+            icon.className = active ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+    });
+}
+
+function renderFavorites() {
+    const grid = document.getElementById('favoritesGrid');
+    if (!grid) return;
+    const favorites = getStoredArray(STORAGE_KEYS.favorites);
+    const favoriteVehicles = cachedVehicles.filter(vehicle => favorites.includes(vehicle._id));
+
+    if (favoriteVehicles.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No favorites yet</p>';
+        return;
+    }
+
+    grid.innerHTML = favoriteVehicles.map(vehicle => {
+        const imageUrl = vehicle.images && vehicle.images.length > 0 
+            ? vehicle.images[0]
+            : 'https://via.placeholder.com/400x300?text=No+Image';
+        return `
+            <div class="vehicle-card" onclick="showVehicleDetails('${vehicle._id}')">
+                <div class="vehicle-image-container">
+                    <img src="${imageUrl}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                </div>
+                <div class="vehicle-info">
+                    <h3 class="vehicle-title">${vehicle.brand} ${vehicle.model}</h3>
+                    <div class="vehicle-price">$${vehicle.price.toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    updateFavoriteButtons();
+    updateCompareButtons();
+}
+
+function displayFeaturedVehicles(vehicles) {
+    const grid = document.getElementById('featuredGrid');
+    if (!grid) return;
+
+    const featured = vehicles.slice(0, 3);
+    if (featured.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No featured vehicles right now</p>';
+        return;
+    }
+
+    grid.innerHTML = featured.map(vehicle => {
+        const imageUrl = vehicle.images && vehicle.images.length > 0 
+            ? vehicle.images[0]
+            : 'https://via.placeholder.com/400x300?text=No+Image';
+        const favoriteActive = isFavorited(vehicle._id);
+        const compareActive = isInCompare(vehicle._id);
+
+        return `
+            <div class="vehicle-card" onclick="showVehicleDetails('${vehicle._id}')">
+                <div class="vehicle-image-container">
+                    <div class="vehicle-quick-actions">
+                        <button class="quick-btn favorite-btn ${favoriteActive ? 'active' : ''}" data-id="${vehicle._id}" onclick="event.stopPropagation(); toggleFavoriteFromCard(this)">
+                            <i class="${favoriteActive ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                        </button>
+                        <button class="quick-btn compare-btn ${compareActive ? 'active' : ''}"
+                            data-id="${vehicle._id}"
+                            data-title="${vehicle.brand} ${vehicle.model}"
+                            data-image="${imageUrl}"
+                            data-price="${vehicle.price}"
+                            data-year="${vehicle.year}"
+                            data-mileage="${vehicle.mileage}"
+                            data-type="${vehicle.type}"
+                            data-condition="${vehicle.condition}"
+                            onclick="event.stopPropagation(); toggleCompareFromCard(this)">
+                            <i class="fas fa-scale-balanced"></i>
+                        </button>
+                    </div>
+                    <img src="${imageUrl}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+                    <div class="vehicle-badge">${vehicle.condition}</div>
+                </div>
+                <div class="vehicle-info">
+                    <h3 class="vehicle-title">${vehicle.brand} ${vehicle.model}</h3>
+                    <div class="vehicle-price">$${vehicle.price.toLocaleString()}</div>
+                    <div class="vehicle-details">
+                        <div class="vehicle-detail">
+                            <i class="fas fa-calendar"></i>
+                            <span>${vehicle.year}</span>
+                        </div>
+                        <div class="vehicle-detail">
+                            <i class="fas fa-car"></i>
+                            <span>${vehicle.type}</span>
+                        </div>
+                    </div>
+                    <div class="vehicle-actions">
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); showVehicleDetails('${vehicle._id}')">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    updateFavoriteButtons();
+    updateCompareButtons();
+}
+
+function isInCompare(vehicleId) {
+    return getStoredArray(STORAGE_KEYS.compare).some(item => item.id === vehicleId);
+}
+
+function toggleCompareFromCard(button) {
+    const vehicleId = button.dataset.id;
+    if (!vehicleId) return;
+
+    const compareList = getStoredArray(STORAGE_KEYS.compare);
+    const index = compareList.findIndex(item => item.id === vehicleId);
+
+    if (index >= 0) {
+        compareList.splice(index, 1);
+        showToast('Removed from compare.');
+    } else {
+        compareList.push({
+            id: vehicleId,
+            title: button.dataset.title,
+            image: button.dataset.image,
+            price: Number(button.dataset.price),
+            year: button.dataset.year,
+            mileage: button.dataset.mileage,
+            type: button.dataset.type,
+            condition: button.dataset.condition
+        });
+        showToast('Added to compare.');
+    }
+
+    setStoredArray(STORAGE_KEYS.compare, compareList);
+    renderCompareDrawer();
+    updateCompareButtons();
+}
+
+function updateCompareButtons() {
+    document.querySelectorAll('.compare-btn').forEach(button => {
+        const vehicleId = button.dataset.id;
+        const active = vehicleId && isInCompare(vehicleId);
+        button.classList.toggle('active', active);
+    });
+}
+
+function renderCompareDrawer() {
+    const compareList = getStoredArray(STORAGE_KEYS.compare);
+    const itemsContainer = document.getElementById('compareItems');
+    const countEl = document.getElementById('compareCount');
+    const fab = document.getElementById('compareFab');
+    const drawer = document.getElementById('compareDrawer');
+
+    if (countEl) {
+        countEl.textContent = compareList.length;
+    }
+    if (fab) {
+        fab.style.display = compareList.length > 0 ? 'flex' : 'none';
+    }
+
+    if (!itemsContainer) return;
+    if (compareList.length === 0) {
+        if (drawer) {
+            drawer.classList.remove('open');
+        }
+        itemsContainer.innerHTML = '<p style="color: rgba(226,232,240,0.8);">No vehicles selected yet.</p>';
+        return;
+    }
+
+    itemsContainer.innerHTML = compareList.map(item => `
+        <div class="compare-item">
+            <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/80x80?text=No+Image'">
+            <div>
+                <strong>${item.title}</strong>
+                <p style="margin: 0; color: rgba(226,232,240,0.75);">$${Number(item.price).toLocaleString()}</p>
+                <button class="btn btn-danger" type="button" style="margin-top: 0.4rem;" onclick="removeCompare('${item.id}')">Remove</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleCompareDrawer() {
+    const drawer = document.getElementById('compareDrawer');
+    if (drawer) {
+        drawer.classList.toggle('open');
+    }
+}
+
+function removeCompare(vehicleId) {
+    const compareList = getStoredArray(STORAGE_KEYS.compare).filter(item => item.id !== vehicleId);
+    setStoredArray(STORAGE_KEYS.compare, compareList);
+    renderCompareDrawer();
+    updateCompareButtons();
+}
+
+function clearCompare() {
+    setStoredArray(STORAGE_KEYS.compare, []);
+    renderCompareDrawer();
+    updateCompareButtons();
+}
+
+function openCompareModal() {
+    const compareList = getStoredArray(STORAGE_KEYS.compare);
+    const modal = document.getElementById('compareModal');
+    const body = document.getElementById('compareModalBody');
+    if (!modal || !body) return;
+
+    if (compareList.length === 0) {
+        showToast('Select vehicles to compare.');
+        return;
+    }
+
+    const rows = ['price', 'year', 'mileage', 'type', 'condition'];
+    const labels = {
+        price: 'Price',
+        year: 'Year',
+        mileage: 'Mileage',
+        type: 'Type',
+        condition: 'Condition'
+    };
+
+    body.innerHTML = `
+        <div class="compare-table">
+            <div class="compare-row compare-header-row">
+                <div class="compare-cell compare-label">Feature</div>
+                ${compareList.map(item => `<div class="compare-cell">${item.title}</div>`).join('')}
+            </div>
+            ${rows.map(row => `
+                <div class="compare-row">
+                    <div class="compare-cell compare-label">${labels[row]}</div>
+                    ${compareList.map(item => {
+                        const value = row === 'price' ? `$${Number(item[row]).toLocaleString()}` : row === 'mileage' ? `${Number(item[row]).toLocaleString()} mi` : item[row];
+                        return `<div class="compare-cell">${value}</div>`;
+                    }).join('')}
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    const drawer = document.getElementById('compareDrawer');
+    if (drawer) {
+        drawer.classList.remove('open');
+    }
+    modal.style.display = 'block';
+}
+
+function closeCompareModal() {
+    const modal = document.getElementById('compareModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function renderRecentViews() {
+    const list = getStoredArray(STORAGE_KEYS.recent);
+    const grid = document.getElementById('recentGrid');
+    if (!grid) return;
+    if (list.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--text-light);">No recent views yet</p>';
+        return;
+    }
+    grid.innerHTML = list.map(item => `
+        <div class="vehicle-card" onclick="showVehicleDetails('${item.id}')">
+            <div class="vehicle-image-container">
+                <img src="${item.image}" alt="${item.title}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
+            </div>
+            <div class="vehicle-info">
+                <h3 class="vehicle-title">${item.title}</h3>
+                <div class="vehicle-price">$${Number(item.price).toLocaleString()}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function trackRecentlyViewed(vehicle) {
+    if (!vehicle) return;
+    const list = getStoredArray(STORAGE_KEYS.recent);
+    const imageUrl = vehicle.images && vehicle.images.length > 0
+        ? vehicle.images[0]
+        : 'https://via.placeholder.com/400x300?text=No+Image';
+
+    const updated = [
+        {
+            id: vehicle._id,
+            title: `${vehicle.brand} ${vehicle.model}`,
+            image: imageUrl,
+            price: vehicle.price
+        },
+        ...list.filter(item => item.id !== vehicle._id)
+    ].slice(0, 6);
+
+    setStoredArray(STORAGE_KEYS.recent, updated);
+    renderRecentViews();
 }
 
 function checkPasswordStrength() {
@@ -1001,6 +1567,7 @@ function showHome() {
         homePage.classList.remove('hidden');
     }
     loadVehicles();
+    renderRecentViews();
 }
 
 function showRegister() {
@@ -1029,6 +1596,7 @@ function showSellVehicle() {
     if (sellVehiclePage) {
         sellVehiclePage.classList.remove('hidden');
     }
+    updatePriceSignal();
 }
 
 function showDashboard() {
@@ -1042,6 +1610,7 @@ function showDashboard() {
         dashboardPage.classList.remove('hidden');
     }
     loadDashboard();
+    renderFavorites();
 }
 
 function showAbout() {
@@ -1065,5 +1634,9 @@ window.onclick = function(event) {
     const modal = document.getElementById('vehicleModal');
     if (modal && event.target === modal) {
         closeModal();
+    }
+    const compareModal = document.getElementById('compareModal');
+    if (compareModal && event.target === compareModal) {
+        closeCompareModal();
     }
 }
