@@ -11,7 +11,7 @@ const crypto = require('crypto');
 const app = express();
 
 // Middleware
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://asraf-codebase.github.io')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
@@ -19,6 +19,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://asraf-codebase.g
 const isOriginAllowed = (origin) => {
   if (!origin) return true; // allow non-browser or same-origin requests
   if (allowedOrigins.includes('*')) return true;
+  if (origin === 'null' && allowedOrigins.includes('null')) return true;
   if (allowedOrigins.includes(origin)) return true;
   if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
   return false;
