@@ -26,7 +26,3 @@ window.APP_CONFIG = ENV;
 
 console.log('Environment:', isDevelopment ? 'Development' : 'Production');
 console.log('API URL:', ENV.API_URL);
-
-window.APP_CONFIG = {
-    API_URL: 'https://imran-auto-hub-backend.vercel.app/api'
-};

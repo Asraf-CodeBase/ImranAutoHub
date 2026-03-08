@@ -11,11 +11,34 @@ const crypto = require('crypto');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: "https://asraf-codebase.github.io",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://asraf-codebase.github.io')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // allow non-browser or same-origin requests
+  if (allowedOrigins.includes('*')) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  return false;
+};
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
